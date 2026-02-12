@@ -1,8 +1,8 @@
-# Kova â€” Product PRD
+# Kova — Product PRD
 
 **Multi-Format AI-Agent Content Creation Platform**
 
-Video â€¢ Threads â€¢ Posts â€¢ Articles â€¢ Audio â€¢ Newsletters
+Video • Threads • Posts • Articles • Audio • Newsletters
 
 | | |
 |---|---|
@@ -38,13 +38,13 @@ Video â€¢ Threads â€¢ Posts â€¢ Articles â€¢ Audio â€¢ Newsl
 
 ## 1. Executive Summary
 
-Kova is an AI-agent-powered content creation platform that automates the entire content lifecycle â€” from idea generation to multi-format, multi-platform publishing. Users create once, publish everywhere.
+Kova is an AI-agent-powered content creation platform that automates the entire content lifecycle — from idea generation to multi-format, multi-platform publishing. Users create once, publish everywhere.
 
 The platform handles every content format: video scripts, X/Twitter threads, LinkedIn posts, blog articles, podcasts, newsletters, and Instagram carousels. A single piece of source content can be automatically transformed into all of these formats simultaneously, each optimized for its target platform.
 
-Users operate on a spectrum of control. At one extreme, they delegate everything to AI agents: type a topic, walk away, and find finished content published across all connected platforms. At the other extreme, they use individual tools manually, controlling every detail. Most users land somewhere in between â€” setting style and persona, reviewing key outputs, and letting AI handle the rest.
+Users operate on a spectrum of control. At one extreme, they delegate everything to AI agents: type a topic, walk away, and find finished content published across all connected platforms. At the other extreme, they use individual tools manually, controlling every detail. Most users land somewhere in between — setting style and persona, reviewing key outputs, and letting AI handle the rest.
 
-The key differentiator is the Style Reference System. Users provide example content they admire (a tweet, a YouTube video, a blog post), and the system learns the style â€” the tone, rhythm, structure, hooks, and formatting patterns â€” without copying any information. That style is then applied when creating new content on completely different topics. Users build a personal library of saved styles and can mix attributes from multiple references.
+The key differentiator is the Style Reference System. Users provide example content they admire (a tweet, a YouTube video, a blog post), and the system learns the style — the tone, rhythm, structure, hooks, and formatting patterns — without copying any information. That style is then applied when creating new content on completely different topics. Users build a personal library of saved styles and can mix attributes from multiple references.
 
 ---
 
@@ -54,7 +54,7 @@ Content creation is broken in three fundamental ways:
 
 **It's labor-intensive.** Creating one piece of quality content takes hours. Adapting it for multiple platforms multiplies the effort. What works on YouTube doesn't work on X/Twitter, and what engages on TikTok fails on LinkedIn. Each platform has its own format, tone, and conventions. Creators either spend all their time on content production or limit themselves to one or two platforms.
 
-**Tools are fragmented.** Creators juggle separate tools for writing, editing, scheduling, publishing, and analytics â€” each with its own interface, login, and learning curve. There is no unified workflow from idea to multi-platform publishing.
+**Tools are fragmented.** Creators juggle separate tools for writing, editing, scheduling, publishing, and analytics — each with its own interface, login, and learning curve. There is no unified workflow from idea to multi-platform publishing.
 
 **Existing automation is rigid.** Current AI content tools are either fully manual (AI as a text box) or rigidly automated (template-based systems with no flexibility). There is no middle ground where users can control some steps and delegate others. When an AI model improves or a new tool launches, tightly-coupled systems require significant rework.
 
@@ -64,11 +64,11 @@ Content creation is broken in three fundamental ways:
 
 Kova solves these problems with three core capabilities:
 
-**End-to-end automation with flexible control.** The pipeline system handles the full journey from idea to published content. Users configure which steps run automatically and which pause for human review. The pipeline itself is configurable â€” users build custom workflows by selecting and ordering steps, not writing code.
+**End-to-end automation with flexible control.** The pipeline system handles the full journey from idea to published content. Users configure which steps run automatically and which pause for human review. The pipeline itself is configurable — users build custom workflows by selecting and ordering steps, not writing code.
 
-**Multi-format transformation engine.** One source transforms into any output format. Write a longform article, and the system produces a YouTube video script, an X thread, a LinkedIn post, a newsletter, and an Instagram carousel â€” each optimized for its platform. Add a new format or platform at any time.
+**Multi-format transformation engine.** One source transforms into any output format. Write a longform article, and the system produces a YouTube video script, an X thread, a LinkedIn post, a newsletter, and an Instagram carousel — each optimized for its platform. Add a new format or platform at any time.
 
-**Style intelligence.** Instead of starting from a blank prompt every time, users teach the system their style. Provide a reference â€” any content you admire â€” and the system extracts the stylistic DNA: how it hooks the reader, how it structures ideas, how it paces sentences, how it formats text. That style becomes reusable across all future content, on any topic.
+**Style intelligence.** Instead of starting from a blank prompt every time, users teach the system their style. Provide a reference — any content you admire — and the system extracts the stylistic DNA: how it hooks the reader, how it structures ideas, how it paces sentences, how it formats text. That style becomes reusable across all future content, on any topic.
 
 ---
 
@@ -102,7 +102,7 @@ Business owners who need a professional content presence but lack a dedicated co
 
 ## 5. User Journeys
 
-### 5.1 Journey: Full Autopilot â€” "Idea to Everywhere"
+### 5.1 Journey: Full Autopilot — "Idea to Everywhere"
 
 Sarah is a tech creator who publishes on YouTube, X, and LinkedIn. She wants to focus on research and ideas, not production.
 
@@ -110,12 +110,12 @@ Sarah is a tech creator who publishes on YouTube, X, and LinkedIn. She wants to 
 2. She types a topic: "Why most developers waste time on premature optimization."
 3. She selects her saved style profile: "Sarah's Tech Voice" (extracted months ago from her best-performing thread).
 4. She clicks "Run" and walks away.
-5. The pipeline runs automatically: idea expansion â†’ research â†’ script writing â†’ multi-format transform.
+5. The pipeline runs automatically: idea expansion → research → script writing → multi-format transform.
 6. 20 minutes later, she receives a notification: "Content ready for review."
-7. She opens the review screen, sees a YouTube script, an X thread (12 posts), and a LinkedIn post â€” all in her voice.
+7. She opens the review screen, sees a YouTube script, an X thread (12 posts), and a LinkedIn post — all in her voice.
 8. She approves all three. The system publishes to YouTube (scheduled for tomorrow 9am), posts the thread immediately on X, and publishes the LinkedIn post.
 
-### 5.2 Journey: Guided Creation â€” "I Want Control at Key Steps"
+### 5.2 Journey: Guided Creation — "I Want Control at Key Steps"
 
 Marcus runs a marketing agency. He manages 5 client accounts, each with a different brand voice.
 
@@ -127,7 +127,7 @@ Marcus runs a marketing agency. He manages 5 client accounts, each with a differ
 6. Pipeline pauses again at the final review gate. Marcus reviews the outputs, makes a small edit to the LinkedIn carousel, approves both.
 7. The thread publishes to Client A's X account. The carousel publishes to their LinkedIn. Marcus moves to Client B.
 
-### 5.3 Journey: Style Setup â€” "I Want to Sound Like This"
+### 5.3 Journey: Style Setup — "I Want to Sound Like This"
 
 Priya is a newsletter writer who admires several creators' styles. She wants to capture the best of each.
 
@@ -135,11 +135,11 @@ Priya is a newsletter writer who admires several creators' styles. She wants to 
 2. She pastes a URL to a viral X thread she admires. The system fetches it and analyzes the style.
 3. She sees the extracted profile: hook pattern ("personal experience + bold contrarian claim"), tone ("casual authority"), rhythm ("short punchy sentences, then one longer for context"), emoji usage ("strategic, one per post opening").
 4. She names it "Viral Thread Voice" and saves it.
-5. She creates another profile from a YouTube video she likes â€” this one captures the structure and engagement techniques.
+5. She creates another profile from a YouTube video she likes — this one captures the structure and engagement techniques.
 6. She creates a composite profile: hook pattern from the thread profile, structure from the YouTube profile, and her own brand's formatting from a third reference.
 7. She names the composite "Priya's Newsletter Voice" and applies it to her weekly newsletter pipeline. Every newsletter from now on follows this combined style automatically.
 
-### 5.4 Journey: Source Transformation â€” "Turn My Existing Content Into More"
+### 5.4 Journey: Source Transformation — "Turn My Existing Content Into More"
 
 David has a library of longform YouTube videos. He wants to extract more value from them.
 
@@ -148,6 +148,21 @@ David has a library of longform YouTube videos. He wants to extract more value f
 3. The pipeline transforms the transcript into: a blog article (SEO-optimized), an X thread (12 posts highlighting key insights), a LinkedIn post (professional angle), a newsletter section, and 3 short-form video scripts (30s clips for TikTok/Reels).
 4. David reviews each output, makes minor edits, and approves.
 5. All content publishes to its respective platforms, all sourced from one video.
+
+
+### 5.5 Journey: Scheduled Autopilot — "Set It and Forget It"
+
+Alex is a solo entrepreneur who needs consistent content but has no time for daily creation.
+
+1. Alex opens the Pipeline Builder and selects the "Trend to Everywhere" template.
+2. He assigns his saved style profile: "Alex's Startup Voice."
+3. He selects target platforms: X, LinkedIn, and his WordPress blog.
+4. He sets the niche: "SaaS growth and bootstrapping."
+5. Instead of clicking "Run," he clicks "Schedule" and sets: every weekday at 10am.
+6. He saves and walks away.
+7. Every morning at 10am, the pipeline triggers automatically: pulls trending topics from his niche, generates content in his voice, transforms to thread + post + article, and publishes to all three platforms.
+8. Alex gets a daily digest notification: "Published 3 pieces today. View performance."
+9. If he wants to review before publishing, he toggles one setting: "Require approval before deploy." Now content generates on schedule but waits for his morning review.
 
 ---
 
@@ -163,10 +178,23 @@ A visual editor where users create content workflows by selecting and ordering s
 - Add, remove, and reorder steps without technical knowledge.
 - Configure each step independently: which AI model to use, what parameters, what style to apply.
 - Add human gates (review/approval checkpoints) at any position.
-- Fan-out branches: one step feeds multiple parallel transforms (e.g., longform â†’ thread + post + newsletter simultaneously).
+- Fan-out branches: one step feeds multiple parallel transforms (e.g., longform → thread + post + newsletter simultaneously).
 - Save custom pipelines as reusable templates.
 - Version history for pipeline configurations.
 - Clone and modify existing templates.
+
+**Trigger modes — every pipeline supports two ways to run:**
+
+| Mode | How It Works | Best For |
+|---|---|---|
+| **One-time** | User clicks "Run" → pipeline executes once | On-demand content, specific topics, source transformation |
+| **Scheduled** | User sets cron (e.g., daily 10am) → pipeline auto-triggers on schedule | Consistent publishing cadence, trend-driven content, hands-off operation |
+
+Scheduled pipelines require a saved style profile (the AI needs to know your voice without asking). They pull topics automatically from trend data in the user's configured niche. Users choose the approval mode:
+
+- **Full autopilot:** generate → deploy. No human in the loop.
+- **Review before publish:** generate → queue for review → deploy after approval.
+- **Per-platform control:** auto-deploy to some platforms (X, LinkedIn), require approval for others (YouTube, newsletter).
 
 ### 6.2 Pipeline Execution Dashboard
 
@@ -205,7 +233,7 @@ Pre-built intelligent steps that power the pipeline:
 
 ### 6.5 Multi-Format Transformation
 
-One source â†’ many outputs. Each transformation is format-aware and platform-aware.
+One source → many outputs. Each transformation is format-aware and platform-aware.
 
 | Source | Outputs | Key Adaptations |
 |---|---|---|
@@ -238,7 +266,7 @@ Automated publishing with per-platform settings.
 
 Most AI content tools ask users to describe their desired style in a text prompt: "Write in a casual, engaging tone." This is vague and inconsistent. Different prompts produce wildly different results.
 
-Kova takes a different approach: show, don't tell. Provide an example of content you admire, and the system reverse-engineers the style. It doesn't copy the content â€” it extracts the patterns behind the content. How the author hooks the reader. How ideas are structured. How sentences are paced. How emojis and formatting are used. These patterns become a reusable style profile that can be applied to any topic.
+Kova takes a different approach: show, don't tell. Provide an example of content you admire, and the system reverse-engineers the style. It doesn't copy the content — it extracts the patterns behind the content. How the author hooks the reader. How ideas are structured. How sentences are paced. How emojis and formatting are used. These patterns become a reusable style profile that can be applied to any topic.
 
 ### 7.2 Style Profile Attributes
 
@@ -248,7 +276,7 @@ When the system analyzes a reference, it extracts these attributes:
 |---|---|---|
 | Hook Pattern | How the content opens to grab attention | "Personal story + bold claim: 'I did X. Here's what nobody tells you.'" |
 | Structure | Overall organization and flow | "8-12 posts, each 1-2 sentences, clear narrative arc" |
-| Tone | Voice and attitude | "Casual authority â€” conversational but confident" |
+| Tone | Voice and attitude | "Casual authority — conversational but confident" |
 | Rhythm | Sentence length patterns and pacing | "Short. Punchy. Then a longer sentence for context." |
 | Emoji Usage | Frequency, placement, and purpose | "Strategic: one per post opening, never mid-sentence" |
 | Engagement Techniques | How the content maintains attention | "Cliffhanger at post 3, question at post 7, CTA at end" |
@@ -345,23 +373,23 @@ Kova needs to fetch content from external platforms for two purposes: (1) analyz
 
 Every platform integration includes a manual fallback: users can paste text directly. This ensures Kova works even when APIs break, change pricing, or restrict access. The auto-fetch from URL is a convenience layer on top of paste-first.
 
-### 9.2 Content Fetching (Inbound â€” Reading External Content)
+### 9.2 Content Fetching (Inbound — Reading External Content)
 
 | Platform / Input | Primary Method | Fallback | Cost | Notes |
 |---|---|---|---|---|
 | YouTube | Free Python transcript library (no API key needed) + YouTube Data API for metadata | User pastes transcript or uploads video | Free | Best API situation. 10,000 free quota units/day. |
 | Blogs / Websites | Direct web fetch + HTML-to-text extraction | User pastes article text | Free | Works with any public URL. No API needed. |
-| X / Twitter | 3rd-party data provider (Supadata, Netrows, or similar) | User pastes tweet/thread text | $49â€“100/mo | Official API is $200â€“5,000/mo. 3rd-party services offer same data at 3% of cost. |
+| X / Twitter | 3rd-party data provider (Supadata, Netrows, or similar) | User pastes tweet/thread text | $49–100/mo | Official API is $200–5,000/mo. 3rd-party services offer same data at 3% of cost. |
 | Instagram | User's own content via Graph API (Business/Creator accounts only) | User pastes caption text or uploads screenshot | Free | Cannot read other users' content via API. Rate limits severely reduced in 2025. |
 | TikTok | Display API for user's own videos; transcript extraction for public videos | User pastes text or uploads video file | Free | Research API (for reading others' content) requires academic approval. |
 | LinkedIn | User's own posts via Marketing API | User pastes post text | Free | Cannot read other users' posts via API. |
-| Podcasts | RSS feed parsing + audio transcription | User uploads audio file or pastes transcript | Freeâ€“low | RSS is open. Transcription cost depends on provider. |
+| Podcasts | RSS feed parsing + audio transcription | User uploads audio file or pastes transcript | Free–low | RSS is open. Transcription cost depends on provider. |
 | Newsletter / Email | User pastes or forwards email content | Direct text input | Free | No API for reading other people's newsletters. |
-| **Video upload** (.mp4, .mov, .webm) | Audio extracted via ffmpeg â†’ transcribed to text via Whisper API / Deepgram | User pastes transcript | ~$0.006/min (Whisper) or ~$0.004/min (Deepgram) | Max 500 MB / 3h. Temp stored in GCS, auto-deleted after 24h. |
+| **Video upload** (.mp4, .mov, .webm) | Audio extracted via ffmpeg → transcribed to text via Whisper API / Deepgram | User pastes transcript | ~$0.006/min (Whisper) or ~$0.004/min (Deepgram) | Max 500 MB / 3h. Temp stored in GCS, auto-deleted after 24h. |
 | **Audio upload** (.mp3, .wav, .m4a) | Transcribed to text via Whisper API / Deepgram | User pastes transcript | ~$0.006/min (Whisper) or ~$0.004/min (Deepgram) | Max 100 MB / 3h. Same temp storage policy. |
-| **Image upload** (.png, .jpg, .webp) | Vision LLM describes content + OCR extracts text | User types description | ~$0.01â€“0.05/image | Max 20 MB. Useful for screenshot-based style refs. |
+| **Image upload** (.png, .jpg, .webp) | Vision LLM describes content + OCR extracts text | User types description | ~$0.01–0.05/image | Max 20 MB. Useful for screenshot-based style refs. |
 
-### 9.3 Content Deploying (Outbound â€” Publishing Content)
+### 9.3 Content Deploying (Outbound — Publishing Content)
 
 | Platform | Method | Cost | Key Requirement |
 |---|---|---|---|
@@ -382,18 +410,18 @@ Every platform integration includes a manual fallback: users can paste text dire
 |---|---|---|
 | YouTube (fetch + deploy) | $0 | Free transcript library + free Data API |
 | Blogs / Websites (fetch) | $0 | Direct web fetch, no API |
-| X / Twitter (fetch) | $49â€“100 | 3rd-party data provider |
-| X / Twitter (deploy) | $0â€“200 | Free tier for light posting, Basic for production |
+| X / Twitter (fetch) | $49–100 | 3rd-party data provider |
+| X / Twitter (deploy) | $0–200 | Free tier for light posting, Basic for production |
 | Instagram (fetch + deploy) | $0 | Graph API for own content |
 | TikTok (fetch + deploy) | $0 | Display + Content Posting APIs |
 | All other platforms | $0 | Free APIs or direct integration |
-| Media transcription (video/audio uploads) | $19â€“45 | 100 users Ã— 5 uploads/mo Ã— avg 15 min. Scales with usage. |
-| Image analysis (Vision LLM) | $1â€“5 | ~$0.02 per image, negligible volume |
-| **Total estimated** | **$69â€“350/mo** | **Scales with X/Twitter + media upload usage** |
+| Media transcription (video/audio uploads) | $19–45 | 100 users × 5 uploads/mo × avg 15 min. Scales with usage. |
+| Image analysis (Vision LLM) | $1–5 | ~$0.02 per image, negligible volume |
+| **Total estimated** | **$69–350/mo** | **Scales with X/Twitter + media upload usage** |
 
 ### 9.5 Risk: Platform API Changes
 
-Platform APIs change frequently â€” pricing increases, rate limit reductions, and access restrictions happen without warning. Kova mitigates this through:
+Platform APIs change frequently — pricing increases, rate limit reductions, and access restrictions happen without warning. Kova mitigates this through:
 
 - **Adapter-based architecture:** Each platform fetcher is a single swappable file. Switch from official API to 3rd-party to scraping without touching business logic.
 - **Paste-first fallback:** Every platform supports manual text input, so Kova never fully depends on any external API.
@@ -402,11 +430,11 @@ Platform APIs change frequently â€” pricing increases, rate limit reduction
 
 ### 9.6 Trend Intelligence: Continuous Data Collection
 
-Beyond fetching individual content, Kova needs to know "what's trending right now" to power idea generation. Trend data is ephemeral â€” a Reddit discussion from 3 days ago or a Google Trends spike from last Tuesday can't be fetched retroactively. Kova solves this with continuous background collection that stores trend signals in a local database, available instantly at pipeline runtime.
+Beyond fetching individual content, Kova needs to know "what's trending right now" to power idea generation. Trend data is ephemeral — a Reddit discussion from 3 days ago or a Google Trends spike from last Tuesday can't be fetched retroactively. Kova solves this with continuous background collection that stores trend signals in a local database, available instantly at pipeline runtime.
 
 #### How It Works (User Perspective)
 
-When a user clicks "Generate Ideas," Kova doesn't search the internet in real-time. Instead, it already has days or weeks of pre-collected trend data from multiple platforms, cross-referenced and scored. The user sees ideas backed by signals like "this topic appeared on Reddit 5 days ago, hit HackerNews 2 days ago, and is now rising on Google Trends â€” it's about to explode."
+When a user clicks "Generate Ideas," Kova doesn't search the internet in real-time. Instead, it already has days or weeks of pre-collected trend data from multiple platforms, cross-referenced and scored. The user sees ideas backed by signals like "this topic appeared on Reddit 5 days ago, hit HackerNews 2 days ago, and is now rising on Google Trends — it's about to explode."
 
 #### Trend Sources
 
@@ -479,7 +507,7 @@ Per-platform customization:
 
 ### 11.1 Philosophy
 
-Kova uses AI models for every intelligent task â€” writing, transcription, video analysis, voice generation, and more. The AI/ML landscape changes extremely fast: new models appear weekly, pricing shifts, and today's best option may be outdated in months.
+Kova uses AI models for every intelligent task — writing, transcription, video analysis, voice generation, and more. The AI/ML landscape changes extremely fast: new models appear weekly, pricing shifts, and today's best option may be outdated in months.
 
 Kova's approach: **every AI model is swappable.** Users and admins can choose which model powers each task, mixing self-hosted open-source models with commercial APIs depending on quality needs and budget.
 
@@ -490,9 +518,9 @@ Users can configure which AI model is used for each task in their settings dashb
 | Task | What It Does | Options |
 |---|---|---|
 | **Writing AI** | Scripts, ideas, editing, analysis | Claude, GPT, Gemini, Grok, DeepSeek, Llama (self-hosted), Qwen (self-hosted) |
-| **Transcription** | Audio/video â†’ text with timestamps | faster-whisper (self-hosted, free), WhisperX (self-hosted), OpenAI Whisper API |
+| **Transcription** | Audio/video → text with timestamps | faster-whisper (self-hosted, free), WhisperX (self-hosted), OpenAI Whisper API |
 | **Video Understanding** | Visual content analysis | SmolVLM2 (self-hosted), Qwen-VL (self-hosted), Gemini Vision, GPT-4o Vision |
-| **Voice Generation** | Text â†’ speech for voiceovers | Kokoro (self-hosted, free), Coqui (self-hosted), ElevenLabs |
+| **Voice Generation** | Text → speech for voiceovers | Kokoro (self-hosted, free), Coqui (self-hosted), ElevenLabs |
 | **Image Generation** | Thumbnails, visual assets | Stable Diffusion XL (self-hosted), DALL-E |
 
 Default: Kova ships with recommended defaults per phase. Users can override per-task.
@@ -504,18 +532,18 @@ Default: Kova ships with recommended defaults per phase. Users can override per-
 | **Cost** | Free per-use (GPU cost only) | Pay per request ($0.001-0.05 per call) |
 | **Speed** | Depends on GPU | Consistent, fast |
 | **Privacy** | Data stays on your infrastructure | Data sent to provider |
-| **Quality** | Good â€” improving rapidly | Generally best-in-class |
+| **Quality** | Good — improving rapidly | Generally best-in-class |
 | **Maintenance** | You manage updates | Provider handles everything |
 | **Switching** | Change config, restart | Change config, restart |
 
-Both approaches use the same interface â€” switching between them requires only a configuration change, not a code change.
+Both approaches use the same interface — switching between them requires only a configuration change, not a code change.
 
 ### 11.4 Cost Implications
 
 | Phase | Recommended Setup | AI Cost/Month |
 |---|---|---|
 | **MVP** | API for writing (Claude/GPT), self-hosted for transcription (faster-whisper) | $10-50 |
-| **Launch** | Mix â€” API for complex tasks, self-hosted for volume tasks | $50-200 |
+| **Launch** | Mix — API for complex tasks, self-hosted for volume tasks | $50-200 |
 | **Scale** | Mostly self-hosted on dedicated GPU, API only for premium features | $200-500 (GPU) |
 
 > **Technical detail:** See Technical PRD Section 6 for full model catalog, Protocol design, GPU infrastructure, and configuration reference.
@@ -546,7 +574,7 @@ Both approaches use the same interface â€” switching between them requires 
 
 ### Phase 3: Multi-Format Engine (Month 4)
 
-**Goal:** One source â†’ multiple output formats.
+**Goal:** One source → multiple output formats.
 
 - Core transformers: long to thread, long to post, long to video script, long to newsletter.
 - Fan-out pipeline branches (parallel transforms from one source).
@@ -641,4 +669,4 @@ These decisions require further research, user testing, or stakeholder input:
 
 ---
 
-*This document defines what Kova does and why. For implementation details â€” architecture, data models, APIs, project structure, and engineering roadmap â€” see the Technical PRD.*
+*This document defines what Kova does and why. For implementation details — architecture, data models, APIs, project structure, and engineering roadmap — see the Technical PRD.*

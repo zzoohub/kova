@@ -60,8 +60,8 @@ Every feature listed in the Product PRD is fully functional in MVP. The "upgrade
 
 | Feature | MVP (Complete) | Upgrade Later (adapter swap only) |
 |---|---|---|
-| **Pipeline Builder** | Full step selection, ordering, save as template, form-based UI | Drag-and-drop UI, version history |
-| **Pipeline Execution** | Full orchestration, real-time progress (SSE), sequential fan-out | Parallel fan-out (Pub/Sub), retry strategies |
+| **Pipeline Builder** | Full step selection, ordering, save as template, form-based UI. Two trigger modes: one-time (run now) and scheduled (cron) | Drag-and-drop UI, version history |
+| **Pipeline Execution** | Full orchestration, real-time progress (SSE), sequential fan-out. Scheduled runs via Cloud Scheduler | Parallel fan-out (Pub/Sub), retry strategies |
 | **Human Gates** | Approve, edit, reject with inline editing | Bulk approve, multi-choice comparison view |
 | **Idea Generator** | LLM + trend data from all collected sources | Fine-tuned niche-specific prompts |
 | **Research Agent** | LLM analyzes provided context and sources | Auto web search (add WebSearchProvider adapter) |
@@ -153,7 +153,22 @@ All steps from Product PRD are registered and functional:
 | DeployStep | DeployTarget | Real — X/Twitter, YouTube, Instagram + Export fallback |
 | HumanGateStep | None | Real — full approve/edit/reject |
 
-### 4.2 Style Reference System
+### 4.2 Pipeline Trigger Modes
+
+| Mode | MVP Status | How It Works |
+|---|---|---|
+| **One-time** | ✅ Full | User clicks "Run" → pipeline executes once |
+| **Scheduled** | ✅ Full | User sets cron schedule → Cloud Scheduler triggers pipeline automatically |
+
+Scheduled pipelines require: saved style profile + configured niche + connected deploy platforms. Cloud Scheduler already exists in MVP for trend collection — same infrastructure, different trigger target.
+
+**Approval modes for scheduled runs:**
+
+- **Full autopilot:** generate → deploy. No human in the loop.
+- **Review before publish:** generate → queue for morning review → deploy after approval.
+- **Per-platform control:** auto-deploy to low-risk platforms (X, LinkedIn), require approval for others (YouTube, newsletter).
+
+### 4.3 Style Reference System
 
 | Feature | MVP Status |
 |---|---|
@@ -165,7 +180,7 @@ All steps from Product PRD are registered and functional:
 | Document upload (.pdf, .docx) | ⚠️ Text paste only — add document parser adapter later |
 | Multi-reference compositing | ⚠️ Single reference per profile — weighted blending prompt later |
 
-### 4.3 Multi-Format Transformation
+### 4.4 Multi-Format Transformation
 
 All 9 transformers included. Each is an LLM prompt template + format validation — no new infrastructure needed:
 
@@ -183,7 +198,7 @@ All 9 transformers included. Each is an LLM prompt template + format validation 
 
 MVP supports sequential fan-out. Parallel fan-out (Pub/Sub) is a performance upgrade later — identical results either way.
 
-### 4.4 Video Processing
+### 4.5 Video Processing
 
 All video features use adapters already in MVP:
 
@@ -204,7 +219,7 @@ All video features use adapters already in MVP:
 Video processing cost: near $0 per video (all self-hosted except ~$0.02 LLM call for moment selection).
 
 
-### 4.5 Deployment
+### 4.6 Deployment
 
 MVP deploys one platform per content type to prove the full pipeline works:
 
@@ -219,7 +234,7 @@ Export means every format is usable from day one. Auto-publishing to more platfo
 
 Adding more deploy targets post-MVP: 1-3 days each, copy-paste adapter pattern, zero domain changes.
 
-### 4.6 Trend Intelligence
+### 4.7 Trend Intelligence
 
 | Source | Collection Rate | Cost |
 |---|---|---|
@@ -231,7 +246,7 @@ Background collection via Cloud Scheduler. Raw signals stored with 30-day retent
 
 Fits within Neon Free tier (~100 MB).
 
-### 4.7 Frontend
+### 4.8 Frontend
 
 | Screen | MVP Implementation |
 |---|---|
