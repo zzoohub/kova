@@ -1,6 +1,6 @@
 # Examples: Adapters
 
-Inbound (HttpServer, handlers, auth, errors) and outbound (SQLite, Postgres, mapper).
+Inbound (HttpServer, handlers, task handlers, webhooks, auth, errors) and outbound (SQLite, Postgres, mapper).
 
 ---
 
@@ -117,6 +117,42 @@ let row: Option<AuthorRow> = sqlx::query_as!(AuthorRow,
     "SELECT id, name FROM authors WHERE id = $1", id_str)
     .fetch_optional(&self.pool).await?;
 row.map(|r| r.to_domain()).transpose()
+```
+
+---
+
+## Inbound: Task Handler (non-HTTP inbound adapter)
+
+```rust
+// src/inbound/tasks/handler.rs
+/// Task queue handler — inbound adapter.
+/// Same pattern as HTTP: typed payload → try_into_domain() → service → ack.
+
+#[derive(Debug, Deserialize)]
+pub struct SyncAuthorTaskPayload {
+    pub author_name: String,
+    pub source: String,
+}
+
+impl SyncAuthorTaskPayload {
+    pub fn try_into_domain(self) -> Result<CreateAuthorRequest, AuthorNameEmptyError> {
+        Ok(CreateAuthorRequest::new(AuthorName::new(&self.author_name)?))
+    }
+}
+
+pub async fn handle_sync_author<AS: AuthorService>(
+    State(state): State<AppState<AS>>,
+    Json(payload): Json<SyncAuthorTaskPayload>,
+) -> Result<Json<serde_json::Value>, ApiError> {
+    let domain_req = payload.try_into_domain()?;
+    state.author_service.create_author(&domain_req).await
+        .map_err(ApiError::from)?;
+    Ok(Json(serde_json::json!({"status": "ok"})))
+}
+
+// In HttpServer::build_router() — wire alongside REST routes:
+// .route("/authors", post(handlers::create_author::<AS>))       // user-facing
+// .route("/tasks/sync-author", post(tasks::handle_sync_author::<AS>)) // task queue
 ```
 
 ---

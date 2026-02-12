@@ -36,6 +36,7 @@ INBOUND (FastAPI Routes, Cloud Tasks Handler, Webhooks)
 | Web Frontend | Next.js on Cloudflare Workers |
 | Database | Neon DB (Serverless PostgreSQL) |
 | Job Queue | Google Cloud Tasks |
+| Scheduler | Google Cloud Scheduler (cron triggers for pipelines + trend collection) |
 | Event Bus | Google Pub/Sub (fan-out) |
 | File Storage | Cloudflare R2 |
 | Real-time | SSE (Server-Sent Events) |
@@ -50,6 +51,7 @@ INBOUND (FastAPI Routes, Cloud Tasks Handler, Webhooks)
 | steps | Step execution contracts and registry | StepInput, StepOutput, StepProgress |
 | style | Reference analysis, profile management | StyleProfile, StyleAttribute, ReferenceSource |
 | content | Assets, transformations, deployment | ContentAsset, DeployRecord, TransformResult |
+| trends | Trend signals, topic aggregation | TrendSignal, TrendTopic |
 
 ## Project Structure (`server/src/`)
 ```
@@ -63,6 +65,7 @@ domain/                            # ━━ NEVER imports from inbound/ or outbo
   steps/                           # models.py, errors.py, ports.py, registry.py
   style/                           # models.py, errors.py, ports.py, service.py
   content/                         # models.py, errors.py, ports.py, service.py
+  trends/                          # models.py, errors.py, ports.py, service.py
 
 inbound/                           # ━━ Drives the domain ━━
   http/
@@ -81,21 +84,32 @@ outbound/                          # ━━ Implements domain Protocols ━━
   postgres/                        # repositories, ORM models (ONLY here), mappers
   llm/                             # claude.py, openai.py (impl LLMProvider)
   storage/                         # r2.py, local.py (impl StorageProvider)
-  deploy/                          # x_twitter.py, youtube.py, linkedin.py, etc.
-  media/                           # runway.py, elevenlabs.py (impl MediaGenerator)
-  fetcher/                         # web.py, youtube_transcript.py, file.py
-  transcription/                   # whisper.py (impl TranscriptionProvider)
+  deploy/                          # x_twitter.py, youtube.py, instagram.py, export.py (impl DeployTarget)
+  transcription/                   # faster_whisper.py (impl Transcriber)
+  tts/                             # kokoro.py (impl TTSProvider)
+  image_gen/                       # pollinations.py (impl ImageGenerator)
+  video/                           # ffmpeg.py (impl VideoManipulator)
+  face_detection/                  # mediapipe.py (impl FaceDetector)
+  scene_detection/                 # pyscenedetect.py (impl SceneDetector)
+  diarization/                     # pyannote.py (impl DiarizationProvider)
+  embeddings/                      # minilm.py (impl EmbeddingProvider)
+  fetcher/                         # web.py, youtube_transcript.py, file.py (impl ReferenceFetcher)
+  trends/                          # reddit.py, youtube.py, google_trends.py (impl TrendCollector)
 ```
 
 ## Pipeline Execution Model
 
 Each step runs as a separate Cloud Run request triggered by Cloud Tasks. Steps are stateless — all state in Neon DB.
 
+**Trigger modes:** One-time (user clicks Run) or Scheduled (Cloud Scheduler cron). Scheduled pipelines require saved style profile + configured niche.
+
 **Run states:** pending → running → waiting_for_approval → completed | partially_completed | failed | cancelled
 
-**Human gates:** Pipeline pauses (no active request), user reviews via API, approval enqueues next step.
+**Human gates:** Pipeline pauses (no active request), user reviews via API, approval enqueues next step. Scheduled runs support full autopilot, review-before-publish, or per-platform approval.
 
 **Fan-out:** Parallel transforms via Cloud Tasks/Pub/Sub. Branches tracked by `branch_index`. Failures don't block siblings.
+
+**Progress:** Steps report to DB. Frontend receives SSE updates (polling DB every 2s, streaming to client).
 
 ## Conventions
 
@@ -148,11 +162,20 @@ Each step runs as a separate Cloud Run request triggered by Cloud Tasks. Steps a
 |---|---|---|
 | Repository | PipelineRepository | Pipeline and run persistence |
 | Repository | StyleProfileRepository | Style profile storage |
-| Provider | LLMProvider | AI text generation |
+| Repository | TrendRepository | Trend signal and topic storage |
+| AI Provider | LLMProvider | Text generation — scripts, ideas, analysis |
+| AI Provider | Transcriber | Audio/video → timestamped text |
+| AI Provider | VisionProvider | Image/video understanding |
+| AI Provider | FaceDetector | Face detection and tracking |
+| AI Provider | SceneDetector | Visual scene/cut detection |
+| AI Provider | DiarizationProvider | Speaker identification |
+| AI Provider | TTSProvider | Text → speech audio |
+| AI Provider | ImageGenerator | Text → image (thumbnails) |
+| AI Provider | EmbeddingProvider | Text → vector embeddings |
+| AI Provider | VideoManipulator | Video ops (cut, crop, caption) |
 | Provider | StorageProvider | File storage (S3-compatible) |
-| Provider | MediaGenerator | Audio/video/image generation |
 | Provider | ReferenceFetcher | Content retrieval from URLs/files |
-| Provider | TranscriptionProvider | Audio/video to text |
-| Target | DeployTarget | Content publishing |
-| Target | ContentTransformer | Format conversion |
-| Step | PipelineStep | Pipeline step execution |
+| Target | DeployTarget | Content publishing to platforms |
+| Target | ContentTransformer | Format conversion (long → thread, etc.) |
+| Collector | TrendCollector | External trend data fetching |
+| Step | PipelineStep | Pipeline step execution contract |

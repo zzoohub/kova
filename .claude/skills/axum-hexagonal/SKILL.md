@@ -107,6 +107,34 @@ Three categories: **Repository** (data), **Metrics** (observability), **Notifier
 - **Middleware (Tower layers)** — lives in inbound layer, invisible to domain.
   Layers wrap services: `TraceLayer → TimeoutLayer → CompressionLayer → CorsLayer`.
 
+### Non-HTTP Inbound Adapters
+
+The inbound layer isn't limited to REST API routes. Any external trigger that drives the domain is an inbound adapter:
+
+| Trigger | Examples | Still HTTP? |
+|---------|----------|-------------|
+| Task/Job queue | Cloud Tasks, SQS, RabbitMQ | Yes (HTTP callback) or No (consumer) |
+| Webhook | Stripe, GitHub, external service callback | Yes |
+| Cron/Scheduler | Cloud Scheduler, cron | Yes (HTTP) or No (direct invoke) |
+| Event stream | NATS, Kafka, Redis Streams | No (pull/push consumer) |
+
+All follow the same pattern: **parse input → call service → respond.**
+
+Key differences from REST routes:
+- Verify caller identity (task queue headers, webhook signatures) instead of user auth.
+- Return simple ack (200 OK) — no user-facing response body.
+- Must be idempotent — task queues retry on failure.
+- Register in HttpServer alongside REST routes.
+
+```
+src/inbound/
+├── http/            # User-facing REST API
+├── tasks/           # Task queue handlers
+└── webhooks/        # External service callbacks
+```
+
+All three are wired into the same HttpServer. Domain doesn't know which triggered it.
+
 ---
 
 ## Outbound Layer
@@ -209,19 +237,19 @@ server.run().await
 
 ## Checklist
 
-- [ ] Response wrappers (`ApiSuccess`, `Created`, `Ok`, `NoContent`)
-- [ ] RFC 9457 ProblemDetails error responses
-- [ ] Domain models validate on construction, no `Deserialize`
-- [ ] Domain errors exhaustive with `Unknown(anyhow::Error)`
-- [ ] Port traits: `Clone + Send + Sync + 'static` with `+ Send` on futures
-- [ ] Service encapsulates orchestration
-- [ ] HTTP types separate from domain
-- [ ] API errors mapped manually, never leaked
-- [ ] Transactions in adapters only
-- [ ] `main` has no axum/sqlx imports
-- [ ] Axum wrapped in `HttpServer`
-- [ ] `build_router()` exposed for tests
-- [ ] Tower layers for middleware (trace, timeout, compression, CORS)
-- [ ] Auth middleware in inbound layer
+### Architecture
+- [ ] Domain never imports from inbound/ or outbound/
+- [ ] Port traits: `Clone + Send + Sync + 'static`, futures `+ Send`
+- [ ] All handlers (HTTP, tasks, webhooks): parse → service → respond
+- [ ] Transactions in adapters only, `to_domain()` mapper in outbound
+- [ ] Errors: domain enum → `From<DomainError> for ApiError` → RFC 9457
+
+### Framework
+- [ ] Axum wrapped in `HttpServer`, `build_router()` for tests
+- [ ] DI via `State<AppState<AS>>` with `Arc`
+- [ ] Tower layers: trace, timeout, compression, CORS
 - [ ] `acquire_timeout` set on pool
-- [ ] using compile time query check. and `.sqlx/` must be committed
+
+### Setup
+- [ ] `main.rs` has no axum/sqlx imports
+- [ ] `.sqlx/` committed (compile-time query check)

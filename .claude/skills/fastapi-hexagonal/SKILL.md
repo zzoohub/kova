@@ -108,6 +108,34 @@ Three categories: **Repository** (data), **Metrics** (observability), **Notifier
 - **Middleware** — lives in inbound layer, invisible to domain.
   **CORS middleware before routers** (order matters).
 
+### Non-HTTP Inbound Adapters
+
+The inbound layer isn't limited to REST API routes. Any external trigger that drives the domain is an inbound adapter:
+
+| Trigger | Examples | Still HTTP? |
+|---------|----------|-------------|
+| Task/Job queue | Cloud Tasks, SQS, Celery | Yes (HTTP callback) or No (consumer) |
+| Webhook | Stripe, GitHub, external service callback | Yes |
+| Cron/Scheduler | Cloud Scheduler, cron | Yes (HTTP) or No (direct invoke) |
+| Event stream | Pub/Sub, Kafka, EventBridge | No (pull/push consumer) |
+
+All follow the same pattern: **parse input → call service → respond.**
+
+Key differences from REST routes:
+- Verify caller identity (task queue headers, webhook signatures) instead of user auth.
+- Return simple ack (200 OK) — no user-facing response body.
+- Must be idempotent — task queues retry on failure.
+- Register in Shell alongside REST routes.
+
+```
+src/inbound/
+├── http/            # User-facing REST API
+├── tasks/           # Task queue handlers
+└── webhooks/        # External service callbacks
+```
+
+All three are wired into the same Shell. Domain doesn't know which triggered it.
+
 ---
 
 ## Outbound Layer
@@ -228,24 +256,19 @@ Package management: `uv`. Commit `uv.lock`. Use `uv run` to execute.
 
 ## Checklist
 
-- [ ] `uv.lock` committed
-- [ ] Response wrappers (`ApiSuccess`, `Created`, `Ok`, `NoContent`)
-- [ ] RFC 9457 ProblemDetails error responses
-- [ ] Domain models validate on construction, no ORM coupling
-- [ ] Domain errors exhaustive with `UnknownAuthorError`
-- [ ] Port traits as `Protocol` classes
-- [ ] Service encapsulates orchestration
-- [ ] HTTP schemas separate from domain models
-- [ ] API errors mapped via exception handlers, never leaked
-- [ ] Transactions in adapters only
-- [ ] ORM ↔ domain mapper in outbound layer
+### Architecture
+- [ ] Domain never imports from inbound/ or outbound/
+- [ ] Ports as `Protocol` classes, services orchestrate
+- [ ] All handlers (HTTP, tasks, webhooks): parse → service → respond
+- [ ] Transactions in adapters only, ORM ↔ domain mapper in outbound
+- [ ] Errors: domain hierarchy → exception handlers → RFC 9457
+
+### Framework
+- [ ] Shell wraps FastAPI, `build_test_app()` for tests
+- [ ] DI via `lifespan` state + `request.state`
+- [ ] `expire_on_commit=False`, `selectinload()`, `pool_timeout` set
+- [ ] No blocking calls in async routes, CORS before routers
+
+### Setup
 - [ ] `main.py` has no FastAPI/SQLAlchemy imports
-- [ ] FastAPI wrapped in `Shell`
-- [ ] `build_test_app()` exposed for tests
-- [ ] `lifespan` context manager (not `on_event`)
-- [ ] `expire_on_commit=False` in async sessions
-- [ ] `selectinload()` for relationships
-- [ ] No blocking calls in async routes
-- [ ] CORS middleware before routers
-- [ ] Auth dependency in inbound layer
-- [ ] `pool_timeout` set on engine
+- [ ] `uv.lock` committed

@@ -1,6 +1,6 @@
 # Examples: Adapters
 
-Inbound (Shell, handlers, auth, errors) and outbound (DB, ORM mapper, eager loading).
+Inbound (Shell, handlers, task handlers, webhooks, auth, errors) and outbound (DB, ORM mapper, eager loading).
 
 ---
 
@@ -176,6 +176,53 @@ async def find_author_with_posts(self, author_id: uuid.UUID) -> Author | None:
         if row is None:
             return None
         return AuthorMapper.to_domain_with_posts(row)
+```
+
+---
+
+## Inbound: Task Handler (non-HTTP inbound adapter)
+
+```python
+# src/inbound/tasks/handler.py
+"""Task queue handler — inbound adapter.
+Same pattern as HTTP: typed payload → try_into_domain() → service → ack.
+"""
+from pydantic import BaseModel
+from fastapi import APIRouter, Depends
+
+from domain.authors.models import CreateAuthorRequest, AuthorName
+from domain.authors.ports import AuthorService
+from inbound.http.dependencies import with_author_service
+
+
+class SyncAuthorTaskPayload(BaseModel):
+    """Task-specific schema — decoupled from domain, same as HTTP request bodies."""
+    author_name: str
+    source: str
+
+    def try_into_domain(self) -> CreateAuthorRequest:
+        return CreateAuthorRequest(name=AuthorName(self.author_name))
+
+
+def task_routes() -> APIRouter:
+    router = APIRouter()
+
+    @router.post("/tasks/sync-author")
+    async def handle_sync_author(
+        payload: SyncAuthorTaskPayload,
+        service: AuthorService = Depends(with_author_service),
+    ):
+        domain_req = payload.try_into_domain()
+        await service.create_author(domain_req)
+        return {"status": "ok"}
+
+    return router
+
+
+# In Shell._build_app() — wire alongside REST routes:
+# app.include_router(author_routes(), prefix="/authors")   # user-facing
+# app.include_router(task_routes())                        # task queue
+# app.include_router(webhook_routes())                     # webhooks
 ```
 
 ---
