@@ -61,9 +61,9 @@ pulumi up                              # Deploy changes
 
 ## Server
 
-### Workflow
-1. **data-modeling** → **database-reviewer** (agent) → **api-design** (plan)
-2. **fastapi-hexagonal** (implementation) + **postgresql** (queries)
+### Workflow (MUST CONFORM TO)
+- **fastapi-hexagonal** (implementation) + **postgresql** (queries)
+- when schema changes: **data-modeling** → **database-reviewer** (agent) → **api-design** (plan)
 
 ### Architecture — Hexagonal (Ports & Adapters)
 
@@ -197,9 +197,16 @@ outbound/                          # ━━ Implements domain Protocols ━━
 
 ## Web
 
-### Workflow
-1. **nextjs** (implementation)
-2. **vercel-react-best-practices** (review)
+### Workflow (MUST CONFORM TO)
+- **nextjs** (implementation) -> **vercel-react-best-practices** (review)
+
+## Core Tech stacks
+- **Next.js**: Nextjs 16
+- **TypeScript**: TypeScript 5.2 (most stricted config)
+- **Tailwind CSS**: Tailwind 4.2
+- **Tanstack Query**: Tanstack Query 5.2
+- **Zod**: Zod 3.21.4
+- **Shadcn-ui**: Shadcn-ui 2.2.0
 
 ### Folder Structure (FSD + Next.js App Router)
 
@@ -242,17 +249,8 @@ src/                 # All FSD layers
 ```
 
 ### FSD Import Rules
-app(routing) → views → widgets → features → entities → shared (never import upward)
-
-`src/views/` = FSD "pages" layer (renamed to avoid Next.js `pages/` directory conflict).
-
-## Core Tech stacks
-- **Next.js**: Nextjs 16
-- **TypeScript**: TypeScript 5.2 (most stricted config)
-- **Tailwind CSS**: Tailwind 4.2
-- **Tanstack Query**: Tanstack Query 5.2
-- **Zod**: Zod 3.21.4
-- **Shadcn-ui**: Shadcn-ui 2.2.0
+- app(routing) → views → widgets → features → entities → shared (never import upward)
+- `src/views/` = FSD "pages" layer (renamed to avoid Next.js `pages/` directory conflict).
 
 ### Conventions
 - **i18n**: all pages can be translated into english/korean languages.
