@@ -1,83 +1,36 @@
 # Kova — Technical PRD
 
-**Architecture Decisions and Technical Strategy**
-
 | | |
 |---|---|
-| **Version** | 2.0 |
+| **Version** | 4.0 |
 | **Date** | February 2025 |
 | **Status** | Draft |
-| **Type** | Technical Requirements |
-| **Audience** | Engineering, DevOps, Architecture |
-| **Companion** | Product PRD (features, user journeys, product roadmap), MVP PRD (scope, timeline, costs) |
+| **Companion** | Product PRD, MVP PRD |
 
 ---
 
-## Table of Contents
+## 1. Architecture
 
-1. [Technical Summary](#1-technical-summary)
-2. [Architecture](#2-architecture)
-3. [Domain Design](#3-domain-design)
-4. [Layer Rules](#4-layer-rules)
-5. [Pipeline Execution Engine](#5-pipeline-execution-engine)
-6. [AI Model Strategy](#6-ai-model-strategy)
-7. [Data Collection Strategy](#7-data-collection-strategy)
-8. [Trend Intelligence Engine](#8-trend-intelligence-engine)
-9. [Infrastructure](#9-infrastructure)
-10. [Data Flow](#10-data-flow)
-11. [Design Principles](#11-design-principles)
-12. [Technical Risks and Mitigations](#12-technical-risks-and-mitigations)
+Hexagonal Architecture (Ports & Adapters). Dependencies point inward. Domain never imports infrastructure.
 
----
-
-## 1. Technical Summary
-
-The backend follows a strict Hexagonal Architecture (Ports & Adapters) pattern. The domain layer defines business logic through Protocol-based ports and frozen dataclass models. All external dependencies — AI models, databases, storage, deployment platforms — are outbound adapters that implement domain-defined protocols.
-
-This architecture is chosen for one reason above all others: **changeability**. The AI content industry changes faster than any other. Models, APIs, platforms, and tools shift monthly. Every external dependency must be replaceable by writing a single new adapter file without touching business logic.
+```
+Inbound (FastAPI, Cloud Tasks, Webhooks)
+  → Domain (Models, Protocols, Services)
+    → Outbound (Postgres, LLM APIs, R2, Deployers)
+```
 
 **Key decisions:**
 
-- Python + FastAPI for AI SDK ecosystem advantage (day-1 SDK support for new AI tools).
-- Hexagonal architecture with Protocol-based ports for maximum swappability.
-- Pipeline steps as stateless, individually-executed units triggered by Cloud Tasks.
-- All state in the database, never in memory across requests.
+- Python + FastAPI — day-1 SDK support for new AI tools, async I/O for LLM-bound workloads.
+- Protocol-based ports (`typing.Protocol`, structural subtyping) — swap any adapter without touching domain.
+- Pipeline steps as stateless, individually-executed units via Cloud Tasks.
+- All state in PostgreSQL, never in memory across requests.
+- API-first for all ML inference. CPU-only tools (FFmpeg, MediaPipe, PySceneDetect) run in Cloud Run container.
 - Single Cloud Run service (modular code, monolithic deployment) until concrete reason to split.
 
----
+### Why Hexagonal
 
-## 2. Architecture
-
-### 2.1 Hexagonal Architecture
-
-Dependencies always point inward. Domain code never imports FastAPI, SQLAlchemy, or any infrastructure package.
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│  INBOUND ADAPTERS                                            │
-│  FastAPI Routes │ Cloud Tasks Handler │ Webhook Receiver      │
-│  (Parse input → call service → map response)                 │
-└──────────────────────┬───────────────────────────────────────┘
-                       │ calls Service Protocol
-                       ▼
-┌──────────────────────────────────────────────────────────────┐
-│  DOMAIN                                                      │
-│  Models (frozen dataclass) │ Errors │ Ports (Protocol)       │
-│  Services │ StepRegistry                                     │
-│  ──── NEVER imports from inbound/ or outbound/ ────          │
-└──────────────────────┬───────────────────────────────────────┘
-                       │ calls Repository/Provider Protocol
-                       ▼
-┌──────────────────────────────────────────────────────────────┐
-│  OUTBOUND ADAPTERS                                           │
-│  Postgres │ Claude/OpenAI │ R2 Storage │ YouTube/X Deployer  │
-│  (Implements domain Protocols)                               │
-└──────────────────────────────────────────────────────────────┘
-```
-
-### 2.2 Why Hexagonal
-
-| Concern | Hexagonal Advantage |
+| Concern | Advantage |
 |---|---|
 | New AI model released | Write one adapter file implementing LLMProvider Protocol |
 | Platform API changes | Update one deployer adapter, domain untouched |
@@ -86,40 +39,40 @@ Dependencies always point inward. Domain code never imports FastAPI, SQLAlchemy,
 | Change web framework | Replace inbound layer, domain untouched |
 | Add new content format | One transformer + one deployer, plug into existing pipeline |
 
-### 2.3 Why Python + FastAPI
+### Why Python + FastAPI
 
-The bottleneck is LLM API latency (2-30 seconds), not server processing speed. Python wins on changeability in the AI ecosystem:
-
-- New AI tools release Python SDKs on day 1. Rust/Go support comes months later or never.
-- Switching between AI providers requires only importing a different SDK and writing a thin adapter.
-- FastAPI's async support handles the I/O-bound workload efficiently.
-- The developer pool for Python in AI is vastly larger than alternatives.
+The bottleneck is LLM API latency (2–30s), not server processing speed. New AI tools release Python SDKs on day 1 — Rust/Go support comes months later or never. FastAPI async handles I/O-bound workload efficiently.
 
 ---
 
-## 3. Domain Design
+## 2. Domain Design
 
-### 3.1 Domain Boundaries
-
-The domain is organized into bounded contexts. Each has its own models, errors, ports, and services. Cross-domain operations use service calls, never shared transactions.
+### 2.1 Bounded Contexts
 
 | Domain | Responsibility | Key Models |
 |---|---|---|
-| pipeline | Orchestration, run state, step execution | Pipeline, PipelineRun, StepConfig, PipelineContext |
+| org | Organization, membership, roles | Organization, OrgMembership |
+| brand | Brand identity, voice, platform accounts | Brand, BrandSettings, PlatformAccount |
+| pipeline | Orchestration, run state, step execution, templates | Pipeline, PipelineRun, PipelineTemplate, PipelineVersion, StepConfig, PipelineContext |
 | steps | Step execution contracts and registry | StepInput, StepOutput, StepProgress |
 | style | Reference analysis, profile management | StyleProfile, StyleAttribute, ReferenceSource |
 | content | Assets, transformations, deployment | ContentAsset, DeployRecord, TransformResult |
 | trends | Trend signals, topic aggregation | TrendSignal, TrendTopic |
+| notifications | In-app notification delivery | Notification, NotificationPreference |
 
-### 3.2 Protocol Catalog
+Cross-domain operations use service calls, never shared transactions.
 
-All external dependencies are defined as `typing.Protocol` classes. Structural subtyping — implementors match method signatures without inheriting from the protocol.
+### 2.2 Protocol Catalog
 
 | Category | Protocol | Purpose |
 |---|---|---|
-| Repository | PipelineRepository | Pipeline and run persistence |
+| Repository | OrgRepository | Organization and membership persistence |
+| Repository | BrandRepository | Brand and platform account storage |
+| Repository | PipelineRepository | Pipeline, template, and run persistence |
 | Repository | StyleProfileRepository | Style profile storage |
 | Repository | TrendRepository | Trend signal and topic storage |
+| Repository | ContentRepository | Content assets and deploy records |
+| Repository | NotificationRepository | Notification persistence and queries |
 | AI Provider | LLMProvider | Text generation — scripts, ideas, analysis |
 | AI Provider | Transcriber | Audio/video → timestamped text |
 | AI Provider | VisionProvider | Image/video understanding |
@@ -132,182 +85,490 @@ All external dependencies are defined as `typing.Protocol` classes. Structural s
 | AI Provider | VideoManipulator | Video ops (cut, crop, caption) |
 | Provider | StorageProvider | File storage (S3-compatible) |
 | Provider | ReferenceFetcher | Content retrieval from URLs/files |
-| Target | DeployTarget | Content publishing to platforms |
+| Provider | LLMProviderRegistry | Resolves provider by name for per-step model selection |
+| Target | DeployTarget | Content publishing to platforms (supports `scheduled_at`) |
 | Target | ContentTransformer | Format conversion (long → thread, etc.) |
 | Step | PipelineStep | Pipeline step execution contract |
 
-### 3.3 Domain Rules
+### 2.3 Domain Rules
 
-- Domain models use `@dataclass(frozen=True)` for immutability.
-- No ORM models in the domain layer — ORM lives exclusively in outbound.
-- Exhaustive error hierarchy per domain: one class per business rule violation.
+- Models use `@dataclass(frozen=True)` for immutability.
+- No ORM in domain layer — ORM lives in outbound only.
+- Exhaustive error hierarchy per domain (one class per business rule violation).
 - Never raise HTTP exceptions in domain — that leaks transport concerns.
-- Each domain has a Service Protocol (interface) and ServiceImpl. Inbound handlers call Services, never Repositories or Providers directly.
+- Each domain has a Service Protocol (interface) and ServiceImpl. Inbound calls Services, never Repositories or Providers directly.
+- All resources scoped by `org_id`. `user_id` tracked as `created_by` for audit.
 
 ---
 
-## 4. Layer Rules
+## 3. Layer Rules
 
-### Inbound Layer
-
-- FastAPI is wrapped in a Shell class so bootstrap never imports FastAPI directly.
+**Inbound:**
+- FastAPI wrapped in Shell class — bootstrap never imports FastAPI directly.
 - Shell exposes `build_test_app()` for testing.
 - Services injected via FastAPI lifespan state — no framework-specific DI container.
-- HTTP request/response schemas are separate from domain models.
+- HTTP request/response schemas separate from domain models.
 - Handlers only: parse input → call service → map response. No SQL, no business logic.
-- Domain errors mapped to HTTP responses via exception handlers (RFC 9457 ProblemDetails).
+- Domain errors mapped to HTTP via exception handlers (RFC 9457 ProblemDetails).
 
-### Domain Layer
-
+**Domain:**
 - Never imports from inbound or outbound.
 - Defines all external contracts as Protocol classes.
 - Models are frozen dataclasses with self-validating value objects.
 - Services orchestrate: repository → provider → return result.
 
-### Outbound Layer
-
+**Outbound:**
 - Each adapter implements a domain Protocol.
 - Transactions encapsulated in adapter, invisible to callers.
 - No external calls (HTTP, queues) inside database transactions.
-- ORM models exist only in outbound. Explicit mappers translate to/from domain models.
+- ORM models only here. Explicit mappers to/from domain models.
 - Infrastructure errors caught and re-raised as domain error types.
-- All I/O must be async. Blocking calls block the entire event loop.
+- All I/O must be async.
 
-### Bootstrap
-
-- `main.py` has zero framework imports. It constructs adapters, wires services, starts app.
-- AI model selection driven entirely by configuration (env vars).
+**Bootstrap:**
+- `main.py` has zero framework imports. Constructs adapters, wires services, starts app.
+- AI model selection driven by configuration (env vars).
 - All Protocol dependencies injected via constructor at startup.
-- Swapping any adapter = change config, restart. Zero code changes.
+- Swapping any adapter = change config, restart.
 
 ---
 
-## 5. Pipeline Execution Engine
+## 4. Pipeline Execution Engine
 
-### 5.1 Execution Model
+### 4.1 Execution Model
 
-Pipelines follow an async, event-driven, step-per-request model:
-
-- Each step runs as a separate Cloud Run request, triggered by Cloud Tasks.
-- Steps are stateless. All state persists in the database between step executions.
-- Long-running operations (video processing, transcription) use webhook callbacks.
-- No Cloud Run request is active during human gate waits.
-
-### 5.2 Execution Flow
+Each step runs as a separate Cloud Run request triggered by Cloud Tasks. Steps are stateless — all state in DB between executions. Long-running operations (video, transcription) use webhook callbacks.
 
 ```
-User triggers pipeline
-  │
-  ▼
-PipelineService creates PipelineRun (status: pending)
-  │
-  ▼
-Enqueue first step → Cloud Tasks
-  │
-  ▼
-Cloud Tasks → Cloud Run request
-  │
-  ├─ Retrieve PipelineRun from DB
-  ├─ Resolve step from StepRegistry
-  ├─ Execute step (with style context if present)
-  ├─ Save results to DB
-  │
-  ├─ Next step is regular? → Enqueue next step → Cloud Tasks
-  ├─ Next step is human gate? → Set status: waiting_for_approval → STOP
-  ├─ Next step is fan-out? → Enqueue N steps in parallel
-  ├─ No more steps? → Set status: completed → DONE
-  │
-  ▼
-(repeat for each step)
+User triggers pipeline → PipelineRun created (pending)
+  → Enqueue step → Cloud Tasks → Cloud Run
+    → Load context from DB → Check run status (if paused/cancelled, stop)
+    → Resolve AI provider (step config → pipeline config → global default)
+    → Execute step (with brand + style context)
+    → Save results to DB
+    → Next step? Enqueue. Human gate? Pause. Fan-out? Enqueue N. Done? Complete.
 ```
 
-### 5.3 Human Gates
-
-When the pipeline reaches a human gate, pipeline status becomes `waiting_for_approval`. No active Cloud Run request. User approves/edits/rejects via frontend. Approval enqueues the next step. Rejection retries the previous step with feedback or halts the pipeline.
-
-### 5.4 Fan-Out
-
-For multi-format output: orchestrator enqueues N transform steps simultaneously. Each branch runs independently. Branches that fail do not block others. Deploy steps run in parallel for each target platform.
-
-### 5.5 Progress Reporting
-
-Steps report progress to the database via callback. Frontend receives updates via SSE (Server-Sent Events) — polling the database every 2 seconds and streaming to the client.
-
-### 5.6 Pipeline Run States
+### 4.2 Run States
 
 | State | Description |
 |---|---|
 | pending | Created, first step not yet started |
 | running | One or more steps actively executing |
 | waiting_for_approval | Paused at human gate |
+| paused | User manually paused — resumes on user action |
 | completed | All steps finished successfully |
 | partially_completed | Some fan-out branches succeeded, others failed |
 | failed | Critical step failed after retries |
 | cancelled | User manually stopped |
 
+**Pause/Resume:** Between steps, the executor checks run status. If `paused`, it does not enqueue the next step. When user resumes, status set to `running` and next pending step is enqueued. A currently executing step finishes normally — pause takes effect after it completes.
+
+**Cancel:** Sets status to `cancelled`. Any in-flight step completes but no further steps are enqueued. Idempotency check prevents re-processing.
+
+### 4.3 Human Gates
+
+Pipeline pauses with `waiting_for_approval`. No active compute. User approves/edits/rejects via frontend. Approval enqueues next step. Rejection retries previous step with user feedback injected, or halts pipeline.
+
+**Triggers notification:** When a pipeline reaches a human gate, an in-app notification is created for the pipeline owner.
+
+### 4.4 Multi-Choice Variations
+
+Steps can generate multiple variations for user selection. Configured per-step via `variations` field in step config (default: 1).
+
+When `variations > 1`:
+1. Step executor runs the LLM N times with slight prompt variation (temperature adjustments, alternate framing).
+2. All N outputs saved as `ContentAsset` entries linked to the same step result, tagged with `variation_index`.
+3. Pipeline enters `waiting_for_approval` with a comparison view.
+4. User selects one variation (or edits one). Selected variation becomes the canonical output for downstream steps.
+
+When `variations = 1`: behaves as normal — single output, standard approve/edit/reject.
+
+### 4.5 Fan-Out
+
+Multi-format: orchestrator enqueues N transform steps via Cloud Tasks. Sequential in MVP (enqueue one at a time), parallel later (enqueue all N at once — Cloud Run handles concurrency natively). Branches are independent — failures don't block siblings. Deploy steps work the same way.
+
+### 4.6 Idempotency
+
+Cloud Tasks guarantees at-least-once delivery — steps can execute more than once. Every step execution carries an idempotency key (`{run_id}:{step_index}:{attempt}`). Before executing, the step checks if a result already exists for that key. If yes, skip and enqueue next. Prevents duplicate content generation and duplicate deploys.
+
+### 4.7 Error Recovery
+
+| Scenario | Behavior |
+|---|---|
+| LLM returns malformed output | Retry up to 2x with stricter prompt. Then fail step. |
+| LLM returns low-quality output | Human gate catches. User rejects with feedback. |
+| External API timeout | Retry with exponential backoff (Cloud Tasks built-in). Max 3 retries. |
+| Fan-out branch fails | Other branches continue. Run marked `partially_completed`. User can retry failed branches. |
+| Deploy fails | Content saved locally. User can retry deploy or export manually. |
+| Step crashes mid-execution | Cloud Tasks retries. Idempotency key prevents duplicate work. |
+
+### 4.8 Backpressure
+
+- Cloud Tasks concurrency capped per queue (e.g., 10 concurrent step executions).
+- LLM API calls rate-limited at adapter level (token bucket, matches provider limits).
+- Scheduled pipeline bursts staggered: Cloud Scheduler adds jitter (±5 min) to avoid thundering herd.
+- If queue depth exceeds threshold, new scheduled runs deferred. User-triggered runs always proceed.
+
+### 4.9 Progress Reporting
+
+Steps write progress to DB via callback. Frontend polls `GET /runs/:id` every 3–5 seconds. Stops polling when status is `completed`, `failed`, or `waiting_for_approval`. Upgrade to SSE if polling load becomes a concern at 100+ concurrent users.
+
 ---
 
-## 6. AI Model Strategy
+## 5. Organization & Team Model
 
-### 6.1 Core Principle
+### 5.1 Structure
 
-Every AI model — self-hosted or commercial API — is a swappable adapter behind a domain Protocol. The domain never knows which model or provider is running. Default: self-hosted when quality is sufficient, commercial APIs when the quality gap justifies cost.
-
-### 6.2 AI Task → Protocol Map
-
-| AI Task | Domain Protocol | Self-Hosted Options | API Options |
-|---|---|---|---|
-| Text Generation | `LLMProvider` | Llama, Qwen, Mistral, Gemma | Claude, GPT, Gemini, Grok, DeepSeek |
-| Transcription | `Transcriber` | faster-whisper, WhisperX | OpenAI Whisper, Deepgram |
-| Video Understanding | `VisionProvider` | SmolVLM2, Qwen-VL | Gemini Vision, GPT-4o Vision |
-| Face Detection | `FaceDetector` | MediaPipe, RetinaFace, YOLO | AWS Rekognition |
-| Scene Detection | `SceneDetector` | PySceneDetect | N/A |
-| Speaker Diarization | `DiarizationProvider` | pyannote-audio | AssemblyAI, Deepgram |
-| Text-to-Speech | `TTSProvider` | Kokoro, Coqui XTTS-v2 | ElevenLabs, OpenAI TTS |
-| Image Generation | `ImageGenerator` | Stable Diffusion XL, Flux | DALL-E, Replicate |
-| Embeddings | `EmbeddingProvider` | all-MiniLM-L6-v2, BGE-M3 | OpenAI Embeddings |
-| Video Editing | `VideoManipulator` | FFmpeg | Shotstack |
-
-### 6.3 Configuration-Driven Selection
-
-Which model powers each task is controlled by environment variables:
+Every user belongs to one Organization. Solo users get a default org (auto-created at registration) with just themselves.
 
 ```
-LLM_PROVIDER=claude          # claude | openai | gemini | grok | deepseek | huggingface
-LLM_MODEL=claude-sonnet-4-20250514
-TRANSCRIBER_PROVIDER=faster-whisper
-TTS_PROVIDER=kokoro
-IMAGE_PROVIDER=pollinations
+Organization
+  └── OrgMembership (user_id, org_id, role)
+        └── role: owner | admin | member
 ```
 
-Bootstrap reads settings → constructs the right adapter via factory. Swapping any model = change env var, restart.
+### 5.2 Resource Scoping
 
-### 6.4 GPU Infrastructure
+All resources are scoped by `org_id`, not `user_id`:
 
-| Phase | Approach | Monthly Cost |
+- Pipelines, Templates, Brands, Styles, Content Assets, Deploy Records, Platform Accounts, Notifications — all have `org_id`.
+- `created_by` (user_id) tracked for audit on every resource.
+- Access query: `WHERE org_id = ?` — everyone in the org sees everything.
+
+### 5.3 Roles
+
+| Role | Permissions |
+|---|---|
+| owner | Everything. Manage members, billing, delete org. One per org. |
+| admin | Create/edit/delete all resources. Invite/remove members. Cannot delete org. |
+| member | Create/edit own resources. Run pipelines. Cannot manage members or org settings. |
+
+### 5.4 Future: Fine-Grained Permissions
+
+Current design: org-wide access. Future: per-Brand access control (agency assigns team members to specific client Brands), per-Pipeline permissions, viewer role.
+
+Not built now but the `org_id` scoping pattern does not block this — it's additive.
+
+---
+
+## 6. Brand Domain
+
+### 6.1 Purpose
+
+Brand defines **who is speaking** — voice, tone, vocabulary, identity. Separate from Style (which defines how content is structured). Pipeline run = Brand + Style + Pipeline steps.
+
+### 6.2 Brand Model
+
+Each Brand contains:
+- Name and description
+- Voice and tone settings (JSONB)
+- Vocabulary preferences — words to use, words to avoid
+- Perspective (first person, second person, etc.)
+- Emoji/symbol usage preferences
+- Target audience description
+- Content guidelines and guardrails
+- Connected platform accounts (one-to-many relationship)
+
+### 6.3 Platform Accounts
+
+Platform accounts belong to a Brand, not a user or org directly. This supports the agency use case: Client A's Brand connects to Client A's X account. Client B's Brand connects to Client B's X account.
+
+```
+Brand → PlatformAccount (platform, credentials, settings)
+```
+
+Each PlatformAccount stores:
+- Platform type (twitter, youtube, instagram, linkedin, etc.)
+- OAuth tokens (encrypted, AES-256, key in GCP Secret Manager)
+- Platform-specific settings (default hashtags, posting schedule, tone adjustments, draft vs auto-publish)
+- Token refresh logic — auto-rotate on use, prompt re-auth on failure
+
+### 6.4 Brand Selection
+
+- Each org has a default Brand for quick pipeline runs.
+- User selects Brand when creating or running a pipeline.
+- Brand settings injected into LLM prompts alongside Style profile at each generation step.
+
+---
+
+## 7. Authentication & Security
+
+### 7.1 User Authentication
+
+JWT-based auth. Short-lived access tokens (15 min) + long-lived refresh tokens (7 days). Tokens issued on login, validated on every API request via middleware.
+
+MVP: email + password. Post-MVP: OAuth (Google, GitHub).
+
+### 7.2 Platform Credentials
+
+See §6.3 — OAuth tokens stored per Brand, encrypted at rest.
+
+### 7.3 Authorization
+
+Every API request extracts `user_id` from JWT → looks up `org_id` via OrgMembership → scopes all queries by `org_id`. Role checked for write/admin operations.
+
+### 7.4 API Security
+
+- Rate limiting: 100 req/min per user (Cloud Run + middleware).
+- Input validation: Pydantic schemas on all endpoints.
+- File upload limits: 500MB video, 100MB audio, 20MB image.
+- Temp files auto-deleted after 24h.
+
+---
+
+## 8. API Surface
+
+### 8.1 Auth
+
+| Method | Path | Purpose |
 |---|---|---|
-| MVP | Cloud Run GPU (on-demand) or Modal.com | $0.50-1.00/job |
-| Launch | Dedicated T4 GPU (16GB) | $150-200/mo |
-| Scale | Dedicated A100 (80GB) | $800-1,500/mo |
+| POST | `/auth/register` | Create account (auto-creates default org) |
+| POST | `/auth/login` | Get tokens |
+| POST | `/auth/refresh` | Refresh access token |
 
-**Rule:** If monthly GPU usage < 100 hours → on-demand. If > 100 hours → dedicated.
+### 8.2 Organization
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/org` | Get current org details |
+| PUT | `/org` | Update org settings |
+| GET | `/org/members` | List members |
+| POST | `/org/members` | Invite member |
+| PUT | `/org/members/:id` | Change member role |
+| DELETE | `/org/members/:id` | Remove member |
+
+### 8.3 Brands
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/brands` | List brands in org |
+| POST | `/brands` | Create brand |
+| GET | `/brands/:id` | Get brand details |
+| PUT | `/brands/:id` | Update brand |
+| DELETE | `/brands/:id` | Delete brand |
+| PUT | `/brands/:id/default` | Set as org default brand |
+| POST | `/brands/:id/platforms` | Connect platform account |
+| DELETE | `/brands/:id/platforms/:pid` | Disconnect platform account |
+
+### 8.4 Pipelines & Templates
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/pipelines` | List user's pipelines |
+| POST | `/pipelines` | Create pipeline |
+| GET | `/pipelines/:id` | Get pipeline with current config |
+| PUT | `/pipelines/:id` | Update pipeline (creates new version) |
+| DELETE | `/pipelines/:id` | Delete pipeline |
+| GET | `/pipelines/:id/versions` | List version history |
+| GET | `/pipelines/:id/versions/:v` | Get specific version |
+| POST | `/pipelines/:id/clone` | Clone pipeline |
+| GET | `/templates` | List templates (pre-built + user-saved) |
+| POST | `/templates` | Save pipeline as template |
+| POST | `/templates/:id/create-pipeline` | Create pipeline from template |
+
+### 8.5 Pipeline Runs
+
+| Method | Path | Purpose |
+|---|---|---|
+| POST | `/pipelines/:id/run` | Trigger pipeline run |
+| GET | `/pipelines/:id/runs` | List runs for pipeline |
+| GET | `/runs/:id` | Get run status + step results |
+| GET | `/runs/:id/poll` | Poll for progress (frontend polling) |
+| POST | `/runs/:id/pause` | Pause running pipeline |
+| POST | `/runs/:id/resume` | Resume paused pipeline |
+| POST | `/runs/:id/cancel` | Cancel pipeline |
+| POST | `/runs/:id/steps/:idx/approve` | Approve human gate (select variation if multi-choice) |
+| POST | `/runs/:id/steps/:idx/reject` | Reject with feedback |
+| POST | `/runs/:id/steps/:idx/retry` | Retry failed step |
+
+### 8.6 Styles
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/styles` | List style profiles |
+| POST | `/styles` | Create style profile |
+| GET | `/styles/:id` | Get style profile |
+| PUT | `/styles/:id` | Update style profile |
+| DELETE | `/styles/:id` | Delete style profile |
+| POST | `/styles/:id/clone` | Duplicate style profile |
+| POST | `/styles/composite` | Create composite from multiple profiles |
+| POST | `/styles/preview` | Generate sample paragraph using style |
+
+### 8.7 Content & Publishing
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/runs/:id/outputs` | List all content assets for a run |
+| GET | `/content/:id` | Get specific content asset |
+| GET | `/content/:id/download` | Download content as file |
+| GET | `/deploys` | Publishing history (filterable by platform, date, brand) |
+| GET | `/deploys/:id` | Get specific deploy record |
+| POST | `/deploys/:id/retry` | Retry failed deployment |
+
+### 8.8 Trends
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/trends/topics` | Get current trend topics (filterable by niche, lifecycle) |
+
+### 8.9 Notifications
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/notifications` | List notifications (unread first) |
+| POST | `/notifications/:id/read` | Mark as read |
+| POST | `/notifications/read-all` | Mark all as read |
+| GET | `/notifications/unread-count` | Badge count for UI |
+
+All responses follow RFC 9457 ProblemDetails on error. Versioning via URL prefix (`/v1/`) when breaking changes occur.
 
 ---
 
-## 7. Data Collection Strategy
+## 9. AI Model Strategy
 
-### 7.1 Fetcher Architecture
+### 9.1 Core Principle
 
-All external content fetching goes through the `ReferenceFetcher` Protocol. The domain never knows whether data came from an API, a 3rd-party service, or user-pasted text. Fetchers are registered in priority order at bootstrap:
+Every AI model is a swappable adapter behind a domain Protocol. The domain never knows which model or provider is running. **API-first:** all ML inference via commercial APIs. No self-hosted models, no GPU infrastructure. CPU-only tools (FFmpeg, MediaPipe, PySceneDetect) run as libraries inside the Cloud Run container.
+
+Self-hosting becomes cost-effective when API spend exceeds ~$500/month. Protocol architecture makes the switch seamless — write a new adapter, change env var.
+
+### 9.2 AI Task → Protocol Map
+
+| AI Task | Protocol | MVP (API) | Self-Host Later |
+|---|---|---|---|
+| Text Generation | `LLMProvider` | Claude, GPT, Gemini, Grok, DeepSeek | Llama, Qwen, Mistral |
+| Transcription + Diarization | `Transcriber`, `DiarizationProvider` | Deepgram (both in one call) | faster-whisper + pyannote |
+| Vision | `VisionProvider` | Reuse LLM (multimodal) | Qwen-VL |
+| Text-to-Speech | `TTSProvider` | OpenAI TTS / ElevenLabs | Kokoro |
+| Image Generation | `ImageGenerator` | Replicate / DALL-E | Stable Diffusion XL |
+| Embeddings | `EmbeddingProvider` | OpenAI Embeddings | all-MiniLM-L6-v2 |
+| Face Detection | `FaceDetector` | MediaPipe (CPU library, pip install) | — |
+| Scene Detection | `SceneDetector` | PySceneDetect (CPU library, pip install) | — |
+| Video Editing | `VideoManipulator` | FFmpeg (CPU, system package) | — |
+
+### 9.3 Per-Step Model Configuration
+
+AI provider selection follows a config hierarchy: **step config → pipeline config → global default**.
+
+```
+Global default (env var):     LLM_PROVIDER=claude, LLM_MODEL=sonnet
+Pipeline config (JSONB):      { "llm_provider": "openai", "llm_model": "gpt-4o" }
+Step config (JSONB):          { "llm_provider": "deepseek" }
+```
+
+At execution time, step config takes precedence over pipeline config, which takes precedence over global env var.
+
+**LLMProviderRegistry:** Bootstrap creates adapter instances for all configured providers. At runtime, the `LLMProviderRegistry` resolves the correct provider by name. Steps call `registry.get("claude")` or `registry.get("deepseek")` based on resolved config.
+
+```env
+# Global defaults
+LLM_PROVIDER=claude
+LLM_MODEL=claude-sonnet-4-20250514
+TRANSCRIBER_PROVIDER=deepgram
+TTS_PROVIDER=openai
+IMAGE_PROVIDER=replicate
+EMBEDDING_PROVIDER=openai
+
+# Enable additional providers for per-step selection
+LLM_PROVIDERS_ENABLED=claude,openai,deepseek
+```
+
+---
+
+## 10. Notifications
+
+### 10.1 In-App Only
+
+Notifications stored in DB, delivered via frontend polling (same polling mechanism as pipeline progress).
+
+### 10.2 Notification Types
+
+| Trigger | Message | Priority |
+|---|---|---|
+| Pipeline reaches human gate | "Pipeline '{name}' needs your review" | High |
+| Pipeline completed | "Pipeline '{name}' finished — {N} pieces ready" | Normal |
+| Pipeline failed | "Pipeline '{name}' failed at step '{step}'" | High |
+| Scheduled pipeline published | "Published {N} pieces to {platforms}" | Normal |
+| Deploy failed | "Failed to publish to {platform}" | High |
+| Platform token expired | "Reconnect your {platform} account for {brand}" | High |
+
+### 10.3 Data Model
+
+```
+Notification:
+  id, org_id, user_id (recipient), type, title, body,
+  reference_type (pipeline_run, deploy, platform_account),
+  reference_id, is_read, created_at
+```
+
+### 10.4 Delivery
+
+Frontend polls `GET /notifications/unread-count` every 30 seconds for badge count. Full notification list loaded on click. Notifications auto-created by services (PipelineService, DeployService) when relevant events occur — no separate event bus needed.
+
+### 10.5 Future
+
+Email notifications (daily digest, urgent alerts) via Resend/SendGrid. Add `NotificationChannel` Protocol when needed. Push notifications for mobile.
+
+---
+
+## 11. Pipeline Templates & Versioning
+
+### 11.1 Templates
+
+Templates are Pipelines with `is_template: true`. Two types:
+
+- **Pre-built templates:** Seeded via database migration at deploy time. Owned by a system org. Read-only for users. Examples: "Idea to Everything," "YouTube to Social," "Blog to Thread," "Trend to Everywhere."
+- **User templates:** Created when user saves a pipeline as template. Owned by user's org. Editable.
+
+Creating a pipeline from a template = deep copy of the template's config into a new Pipeline.
+
+### 11.2 Version History
+
+Every `PUT /pipelines/:id` creates a new `PipelineVersion` row:
+
+```
+PipelineVersion:
+  id, pipeline_id, version_number, config (JSONB),
+  created_by, created_at
+```
+
+Pipeline always runs the latest version. User can view and restore any previous version.
+
+---
+
+## 12. Content Scheduling & Deployment
+
+### 12.1 Scheduling
+
+Content scheduling uses **platform-native scheduling**. The `DeployTarget` Protocol accepts an optional `scheduled_at` parameter. Deployer adapters pass this to the platform API (YouTube, X, LinkedIn all support scheduled publishing natively).
+
+No custom scheduling infrastructure needed — platforms handle the timing.
+
+### 12.2 Cross-Platform Staggering
+
+When deploying to multiple platforms, the orchestrator staggers deploy times automatically: first platform deploys at requested time, each subsequent platform offset by a configurable interval (default: 30 min). User can override per-platform in Brand settings.
+
+### 12.3 Draft Mode
+
+Every deploy has a `mode` option: `publish`, `schedule`, or `draft`. Draft mode saves content as an export file (R2) without hitting any platform API. Universal fallback for platforms without API access.
+
+---
+
+## 13. Data Collection Strategy
+
+### 13.1 Fetcher Architecture
+
+All external content fetching goes through `ReferenceFetcher` Protocol. Fetchers registered in priority order:
 
 1. **URL pattern match** → platform-specific fetcher (YouTube, Twitter, etc.)
 2. **File type match** → media processor (video, audio, image uploads)
 3. **Generic web URL** → web article fetcher
 4. **Raw text** → paste fallback (always works, zero cost)
 
-If a platform-specific fetcher fails, fall through to the next option.
+If a platform-specific fetcher fails, fall through to next option.
 
-### 7.2 Platform Strategy
+### 13.2 Platform Strategy
 
 | Platform | Fetch Method | Cost | Fallback |
 |---|---|---|---|
@@ -318,11 +579,9 @@ If a platform-specific fetcher fails, fall through to the next option.
 | TikTok | Display API (own content only) | $0 | User pastes text |
 | Podcast | RSS feed parsing + transcription | $0–low | User uploads audio |
 
-**Design principle:** Always offer paste-first. Auto-fetch is a convenience layer.
+Design principle: paste-first always. Auto-fetch is a convenience layer.
 
-### 7.3 Media File Processing
-
-Users can upload raw media. All media is processed into text before entering the pipeline:
+### 13.3 Media File Processing
 
 - **Video** → extract audio (FFmpeg) → transcribe → optional frame analysis
 - **Audio** → transcribe
@@ -330,219 +589,235 @@ Users can upload raw media. All media is processed into text before entering the
 
 File limits: 500MB video, 100MB audio, 20MB image. Max 180 min. Temp storage auto-deleted after 24h.
 
-### 7.4 Deploy Targets
+### 13.4 Deploy Targets
 
-All deployers implement the `DeployTarget` Protocol. Each platform uses its official API with OAuth or API key auth. Supported: YouTube, X/Twitter, Instagram, TikTok, LinkedIn, WordPress/Ghost, Mailchimp/ConvertKit, Reddit, Discord.
+All deployers implement `DeployTarget` Protocol. Each platform uses official API with OAuth or API key auth. Supported: YouTube, X/Twitter, Instagram, TikTok, LinkedIn, WordPress/Ghost, Mailchimp/ConvertKit, Reddit, Discord.
 
-### 7.5 Platform API Risk Mitigation
+### 13.5 Platform API Risk Mitigation
 
-- **Adapter-based architecture:** Each fetcher/deployer is a single swappable file.
-- **Paste-first fallback:** Every platform supports manual text input.
-- **Multi-source redundancy:** Critical platforms maintain adapters for 2-3 providers.
-- **Cost monitoring:** Per-platform API cost tracking with budget alerts.
+- Adapter-based: each fetcher/deployer is a single swappable file.
+- Paste-first fallback: every platform supports manual text input.
+- Multi-source redundancy: critical platforms maintain 2–3 provider adapters.
+- Cost monitoring: per-platform API cost tracking with budget alerts.
 
 ---
 
-## 8. Trend Intelligence Engine
+## 14. Trend Intelligence Engine
 
-### 8.1 Why Continuous Collection
+### 14.1 Why Continuous Collection
 
-Trend data is ephemeral — a Reddit discussion from 3 days ago can't be fetched retroactively. Without pre-collection, every "Generate Ideas" call would hit live APIs (slow, expensive, rate-limited, current snapshot only).
+Trend data is ephemeral — a Reddit discussion from 3 days ago can't be fetched retroactively. Without pre-collection, every "Generate Ideas" call hits live APIs (slow, expensive, rate-limited, current snapshot only).
 
-With continuous collection: queries local DB instantly (sub-second), historical data enables velocity and lifecycle detection, cross-platform correlation detects emerging trends before they peak, and collection cost is amortized across all users.
+With continuous collection: queries local DB instantly (sub-second), historical data enables velocity and lifecycle detection, cross-platform correlation detects emerging trends before peak, collection cost amortized across all users.
 
-### 8.2 Architecture
+### 14.2 Architecture
 
-Cloud Scheduler triggers collectors on cron → collectors fetch and normalize → raw signals stored in DB → aggregation job deduplicates and scores → processed topics stored → IdeaGeneratorStep reads topics at runtime with zero external API calls.
+```
+Cloud Scheduler (cron) → Collectors fetch & normalize
+  → Raw signals stored in DB
+    → Aggregation job deduplicates & scores
+      → Processed topics stored
+        → IdeaGeneratorStep reads at runtime (zero external API calls)
+```
 
-### 8.3 Trend Sources
+### 14.3 Trend Sources
 
-Each collector implements the `TrendCollector` Protocol.
+Each collector implements `TrendCollector` Protocol.
 
 | Source | Interval | Cost | Signal Type |
 |---|---|---|---|
-| Reddit | Every 1-4h | Free | Real problems, discussions |
-| YouTube | Every 1-4h | Free | What people want to watch |
-| Google Trends | Every 4-6h | Free | Search demand signals |
-| X / Twitter | Every 1-4h | Shared with fetch cost | Real-time conversation |
+| Reddit | Every 1–4h | Free | Real problems, discussions |
+| YouTube | Every 1–4h | Free | What people want to watch |
+| Google Trends | Every 4–6h | Free | Search demand signals |
+| X / Twitter | Every 1–4h | Shared with fetch cost | Real-time conversation |
 | HackerNews | Every 6h | Free | Tech/startup early signals |
 | Exploding Topics | Daily | $39/mo | Curated growth forecasts |
 | Wikipedia | Daily | Free | Public interest proxy |
 
-### 8.4 Storage Design
+### 14.4 Storage Design
 
-Two tables: raw signals (append-only, large, auto-deleted per retention policy) and processed topics (small, updated in place, kept long-term). Raw signals kept for algorithm improvement and debugging. Each collector extracts only reprocessing-relevant fields, not full API responses.
+Two tables: raw signals (append-only, auto-deleted per retention policy) and processed topics (updated in place, kept long-term). ~20 MB/day at full collection, ~1.8 GB for 90-day retention.
 
-Storage: ~20 MB/day at full collection, ~1.8 GB for 90-day retention. Negligible at any Neon plan.
+### 14.5 Aggregation
 
-### 8.5 Aggregation
+Raw signals normalized (0–100), deduplicated via embedding-based topic matching, scored by cross-platform presence, classified into lifecycle stages: emerging → rising → peak → declining.
 
-Raw signals from different platforms are normalized (0-100 scale), deduplicated via embedding-based topic matching, scored by cross-platform presence, and classified into lifecycle stages: emerging → rising → peak → declining.
-
-### 8.6 Tiered Collection by Phase
+### 14.6 Tiered Collection by Phase
 
 | Phase | Sources | Frequency | API Cost |
 |---|---|---|---|
 | MVP | Reddit, YouTube, Google Trends (free only) | Every 4h | $0 |
-| Launch | All 7 sources | Full rate | $49-139/mo |
-| Scale | All + niche-specific | Peak-hour boosted | $49-139/mo |
+| Launch | All 7 sources | Full rate | $49–139/mo |
+| Scale | All + niche-specific | Peak-hour boosted | $49–139/mo |
 
-Configuration is environment-variable driven. Switching phases = change config, no code changes.
+Configuration is env-var driven. Switching phases = change config, no code changes.
 
 ---
 
-## 9. Infrastructure
+## 15. Data Design
 
-### 9.1 Technology Stack
+### 15.1 Key Entities
+
+| Entity | Storage | Notes |
+|---|---|---|
+| Organizations | DB | Org settings, billing |
+| Users | DB | Auth credentials, org membership |
+| Org memberships | DB | user_id + org_id + role |
+| Brands | DB (JSONB settings) | Voice, tone, vocabulary, guidelines |
+| Platform accounts | DB (encrypted) | OAuth tokens per Brand |
+| Pipelines | DB (JSONB config) | Step configs, schedule |
+| Pipeline versions | DB (JSONB config) | Version history per pipeline |
+| Pipeline templates | DB (JSONB config) | Pre-built + user-saved, `is_template` flag |
+| Pipeline runs | DB | State, context, results |
+| Style profiles | DB (JSONB attributes) | Extracted patterns |
+| Content assets | DB (text) + R2 (files) | Generated content, variation_index for multi-choice |
+| Deploy records | DB | What published where/when, scheduled_at |
+| Notifications | DB | In-app notifications with read status |
+| Trend signals | DB | Raw data, 30-day retention |
+| Trend topics | DB | Scored, lifecycle-classified |
+
+### 15.2 JSONB Strategy
+
+JSONB used for: pipeline configs, brand settings, style attributes, step results, notification metadata.
+
+**Schema versioning:** Every JSONB column includes `_schema_version` integer. Application code checks version on read.
+
+**Migration strategy:** Lazy backfill — old rows upgraded on read, written back with new version. Bulk backfill script available for major version changes.
+
+**Validation:** Domain dataclasses validate JSONB shape on deserialization. Invalid data raises domain error, never silently ignored.
+
+### 15.3 Data Flows
+
+**Pipeline:**
+```
+User selects Brand + Style + Pipeline → creates PipelineRun
+  → Steps execute via Cloud Tasks
+  → Each step resolves AI provider (step → pipeline → global config)
+  → Each step injects Brand voice + Style structure into LLM prompts
+  → Generation → ContentAsset (with variations if configured)
+  → Transform → fan-out
+  → Human gate → pause + notification
+  → Deploy → DeployRecord (immediate, scheduled, or draft)
+```
+
+**Style Reference:**
+```
+User provides reference (URL, text, upload)
+  → ReferenceFetcher resolves to text
+  → LLM extracts style attributes (composition patterns only, not voice)
+  → StyleProfile saved (JSONB, editable)
+  → Applied to future runs via prompt injection
+```
+
+**Trend:**
+```
+Cloud Scheduler → Collectors → Raw signals in DB
+  → Aggregation: normalize, deduplicate, score, lifecycle classify
+  → IdeaGeneratorStep queries local topics (zero external calls)
+```
+
+---
+
+## 16. Infrastructure
+
+### 16.1 Technology Stack
 
 | Component | Technology | Rationale |
 |---|---|---|
 | Frontend | Next.js on Cloudflare Workers/Pages | Edge-deployed, React ecosystem |
-| Backend API | FastAPI (Python) on Google Cloud Run | Python-first AI SDKs, async, serverless |
+| Backend API | FastAPI on Cloud Run | Python-first AI SDKs, async, serverless |
 | Database | Neon DB (Serverless PostgreSQL) | Serverless scaling, JSONB, connection pooling |
-| Job Queue | Google Cloud Tasks | Native Cloud Run integration, retries, timeouts |
-| Event Bus | Google Pub/Sub | Fan-out for parallel transforms/deploys |
+| Job Queue | Cloud Tasks | Native Cloud Run integration, retries, timeouts, fan-out |
 | File Storage | Cloudflare R2 | S3-compatible, zero egress fees |
-| Real-time | SSE (Server-Sent Events) | Simple, one-directional, works through CDN |
+| Real-time | Frontend polling (SSE upgrade later) | Simple, works everywhere, no connection management |
+| Secrets | GCP Secret Manager | Encryption keys, API keys |
 | Package Mgmt | uv | Fast, lockfile committed (uv.lock) |
 
-### 9.2 Deployment Architecture
+### 16.2 Deployment
 
-- Single Cloud Run service for all API + step execution (monolithic deploy, modular code).
-- Cloudflare Workers/Pages for frontend (global edge).
-- Neon DB with serverless scaling and auto connection pooling.
+- Cloud Run service: all API + step execution (monolithic deploy, modular code).
+- Cloudflare Workers/Pages: frontend (global edge).
+- Neon DB: serverless scaling, auto connection pooling.
 - All services scale to zero when idle.
-- Future: GPU-requiring steps → separate Cloud Run service.
+- CPU-only tools (FFmpeg, MediaPipe, PySceneDetect) installed in Cloud Run container.
+- All ML inference via external APIs — no GPU infrastructure to manage.
 
-### 9.3 Timeouts and Long Operations
+### 16.3 Timeouts
 
 - Each pipeline step = one Cloud Run request (well under 30-min timeout).
-- Long external operations use webhook pattern: start job → return → webhook receives result → enqueue next step.
-- Human gates: no active request during wait. User approval triggers next step.
+- Long external operations: webhook pattern — start job → return → webhook receives result → enqueue next step.
+- Human gates: no active request during wait.
 
 ---
 
-## 10. Data Flow
+## 17. Observability
 
-### 10.1 Pipeline Data Flow
-
-```
-User Input (topic, style profile, pipeline config)
-  │
-  ▼
-Pipeline created in DB (JSON config, references to style profiles)
-  │
-  ▼
-Steps execute sequentially via Cloud Tasks
-  │  Each step reads context from DB, executes, writes results back
-  │  Style profile injected into LLM prompts at each generation step
-  │
-  ├─ Generation steps → content stored as ContentAsset (text in DB, files in R2)
-  ├─ Transform steps → fan-out produces format-specific assets
-  ├─ Human gates → pipeline pauses, user reviews/edits, pipeline resumes
-  └─ Deploy steps → assets published to connected platforms
-  │
-  ▼
-DeployRecords track what was published where and when
-```
-
-### 10.2 Style Reference Data Flow
-
-```
-User provides reference (URL, pasted text, uploaded file)
-  │
-  ▼
-ReferenceFetcher chain resolves input to text
-  (YouTube → transcript, web → article, media → transcribe/describe)
-  │
-  ▼
-LLM analyzes text → extracts style attributes
-  (hook pattern, tone, rhythm, formatting, engagement techniques)
-  │
-  ▼
-StyleProfile saved to DB (JSONB attributes, editable by user)
-  │
-  ▼
-Applied to future pipeline runs via prompt injection
-```
-
-### 10.3 Trend Data Flow
-
-```
-Cloud Scheduler triggers collectors on cron
-  │
-  ▼
-Collectors fetch from external sources → normalize → save raw signals to DB
-  │
-  ▼
-Aggregation job runs after collectors
-  → normalize scores across platforms
-  → deduplicate via embedding similarity
-  → calculate velocity and lifecycle stage
-  → write processed topics to DB
-  │
-  ▼
-IdeaGeneratorStep queries processed topics at runtime
-  → zero external API calls
-  → feeds trend context to LLM for idea generation
-```
-
-### 10.4 Key Data Entities
-
-| Entity | Storage | Purpose |
+| Concern | Tool | Cost |
 |---|---|---|
-| Pipeline templates | DB (JSONB config) | Reusable step configurations |
-| Pipeline runs | DB | Execution state and context |
-| Step progress | DB | Per-step status, results |
-| Style profiles | DB (JSONB attributes) | Extracted style patterns |
-| Content assets | DB (text) + R2 (files) | Generated content |
-| Deploy records | DB | Publishing history |
-| Platform accounts | DB (encrypted credentials) | OAuth tokens, API keys |
-| Trend signals | DB | Raw platform data (retention-limited) |
-| Trend topics | DB | Processed, scored, lifecycle-classified |
+| Error tracking | Sentry | Free tier |
+| Distributed tracing | GCP Cloud Trace | Free tier |
+| Logs | GCP Cloud Logging (auto from Cloud Run) | Free tier |
+| Metrics & dashboards | GCP Cloud Monitoring | Free |
+| Alerting | GCP Cloud Monitoring alerts | Free |
+| Cost-per-pipeline | Custom: log token counts per step in DB | $0 |
 
-### 10.5 JSONB Strategy
+**Correlation ID:** Every pipeline run generates a `pipeline_run_id` propagated through all Cloud Tasks requests as a header. Sentry, Cloud Trace, and Cloud Logging all tag with this ID. Filter any tool by run ID to see the full pipeline trace.
 
-JSONB columns are used for rapidly evolving schemas: pipeline configs, style attributes, step results, user brand settings. This avoids migration churn during early development while keeping queryability.
+**Structured logging:** All log output is JSON with fields: `run_id`, `step_index`, `user_id`, `org_id`, `level`, `message`, `duration_ms`. Cloud Logging indexes automatically.
+
+**Alerts:** Error rate > 5% over 5 min. Step duration > 2x p95. LLM cost per day exceeds budget threshold.
 
 ---
 
-## 11. Design Principles
+## 18. Testing Strategy
 
-1. **Changeability Above All.** Every external dependency replaceable by one adapter file. If it can't be swapped easily, the architecture is wrong.
+| Layer | Approach |
+|---|---|
+| Domain | Unit tests with in-memory fake adapters (implement Protocols with dicts/lists). No I/O. |
+| Services | Integration tests via `build_test_app()`. Fake adapters injected at bootstrap. Full pipeline flow without external calls. |
+| Outbound | Adapter-specific tests against real services (Neon, R2) in CI with test credentials. |
+| LLM steps | Golden output snapshots. Assert structural correctness (valid JSON, required fields, length), not exact text. |
+| Pipeline orchestration | Full step chains with fake LLM returning canned responses. Verify state transitions, fan-out, human gates, pause/resume, variations, error recovery. |
+| API | HTTP tests against test app. Verify request validation, auth, org scoping, role enforcement, error mapping. |
 
-2. **Dependencies Point Inward.** Domain never imports from inbound or outbound. Domain defines Protocols; adapters implement them.
+---
 
+## 19. Design Principles
+
+1. **Changeability Above All.** Every external dependency replaceable by one adapter file.
+2. **Dependencies Point Inward.** Domain defines Protocols; adapters implement them.
 3. **Pipeline as Data.** JSON config in DB, not code. Add/remove/reorder steps without deployment.
-
 4. **Media Agnostic.** All formats behind the same Protocol. New format = one transformer + one deployer.
-
-5. **Steps Dumb, Orchestration Smart.** Steps do one thing. Runner handles sequencing, fan-out, error recovery, human gates.
-
+5. **Steps Dumb, Orchestration Smart.** Steps do one thing. Runner handles sequencing, fan-out, error recovery, human gates, variations.
 6. **Modular Code, Monolithic Deployment.** Split only when concrete reason exists.
-
 7. **State in Database.** No in-memory state across requests. Serverless, crash-recoverable, horizontally scalable.
-
 8. **Bootstrap Assembles, Domain Decides.** main.py constructs. Domain contains logic. Handlers parse, call, respond.
-
 9. **Style, Not Information.** Reference system extracts how, not what. Pure patterns applicable to any topic.
+10. **Brand and Style Are Separate.** Brand = who is speaking. Style = how content is composed. Selected independently per pipeline run.
+11. **Org-Scoped Everything.** Resources belong to orgs, not users. Teams share by default. Fine-grained permissions are additive.
 
 ---
 
-## 12. Technical Risks and Mitigations
+## 20. Risks & Mitigations
 
 | Risk | Impact | Mitigation |
 |---|---|---|
-| AI model API changes/deprecation | High | LLMProvider Protocol; new adapter only |
-| Platform API changes (X, LinkedIn, TikTok) | High | DeployTarget Protocol; independent adapters |
-| Platform rate limits/access restrictions | Medium | Queue-based deploys; rate limiting; draft/export fallback |
+| AI model API changes/deprecation | High | Protocol abstraction; new adapter only |
+| Platform API changes | High | DeployTarget Protocol; independent adapters |
+| Rate limits / access restrictions | Medium | Queue-based deploys; rate limiting; export fallback |
+| Cloud Tasks double-delivery | Medium | Idempotency keys per step execution |
+| Scheduled pipeline thundering herd | Medium | Jitter on scheduler + queue concurrency caps |
 | Video/audio tool landscape shifts | High | All media tools behind Protocols; swap adapter |
 | Cloud Run cold start latency | Low | Minimum instances; optimized container |
-| Fan-out complexity at scale | Medium | Start simple (sequential); add parallel when needed |
-| Cost management at scale | High | Per-step cost tracking; usage quotas; self-host at volume |
-| AI output quality inconsistency | High | Human gates as safety net; style profiles improve consistency |
-| Content saturation | Medium | Focus on style differentiation, not volume; quality metrics |
+| Fan-out complexity at scale | Medium | Start sequential; add parallel when needed |
+| JSONB schema drift | Medium | `_schema_version` field + lazy backfill |
+| Polling load at scale | Low | Upgrade to SSE, then Redis pub/sub if needed |
+| Cost management at scale | High | Per-step token logging; daily budget alerts; self-host at volume |
+| AI output quality inconsistency | High | Human gates; multi-choice variations; structured validation; retry with stricter prompt |
+| Content saturation | Medium | Style differentiation over volume; quality metrics |
+| Multi-choice variation cost | Low | Multiplies LLM calls by N; user-configurable, default 1 |
+| Platform scheduling gaps | Low | Not all platforms support native scheduling; draft/export fallback |
 
 ---
 
-*This document defines what we decided and why. For product features, user journeys, and product roadmap, see the Product PRD. For MVP scope, timeline, and costs, see the MVP PRD.*
+*For product features see Product PRD.*

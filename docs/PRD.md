@@ -6,7 +6,7 @@ Video • Threads • Posts • Articles • Audio • Newsletters
 
 | | |
 |---|---|
-| **Version** | 1.0 |
+| **Version** | 2.0 |
 | **Date** | February 2025 |
 | **Status** | Draft |
 | **Type** | Product Requirements |
@@ -31,8 +31,6 @@ Video • Threads • Posts • Articles • Audio • Newsletters
 13. [Success Metrics](#13-success-metrics)
 14. [Product Risks](#14-product-risks)
 15. [Open Questions](#15-open-questions)
-13. [Product Risks](#12-product-risks)
-14. [Open Questions](#13-open-questions)
 
 ---
 
@@ -148,7 +146,6 @@ David has a library of longform YouTube videos. He wants to extract more value f
 3. The pipeline transforms the transcript into: a blog article (SEO-optimized), an X thread (12 posts highlighting key insights), a LinkedIn post (professional angle), a newsletter section, and 3 short-form video scripts (30s clips for TikTok/Reels).
 4. David reviews each output, makes minor edits, and approves.
 5. All content publishes to its respective platforms, all sourced from one video.
-
 
 ### 5.5 Journey: Scheduled Autopilot — "Set It and Forget It"
 
@@ -302,7 +299,7 @@ Every input serves **dual purpose** — it can be used as a style reference (lea
 | **Prompt** | Topic, idea, or instruction typed by user | Direct — used as-is | Free |
 | **URL** | Any web content — tweets, threads, YouTube videos, blog posts, articles | Platform-aware fetch: YouTube → transcript, Twitter → thread text, web → article extraction | Free |
 | **Article / Document** | Pasted text, uploaded .docx, .pdf, .txt | Text extraction (pasted = direct, files = parser) | Free |
-| **Image** | Uploaded .png, .jpg, .webp — screenshots, infographics, visual references | Vision LLM describes content + OCR extracts text | ~$0.01-0.05/image |
+| **Image** | Uploaded .png, .jpg, .webp — screenshots, infographics, visual references | Vision LLM describes content + OCR extracts text | ~$0.01–0.05/image |
 | **Video** | Uploaded .mp4, .mov, .webm — talks, tutorials, vlogs (max 500 MB / 3h) | Extract audio → transcribe → optional keyframe analysis | ~$0.006/min |
 | **Audio** | Uploaded .mp3, .wav, .m4a — podcasts, interviews (max 100 MB / 3h) | Transcribe to text | ~$0.006/min |
 
@@ -393,8 +390,8 @@ Every platform integration includes a manual fallback: users can paste text dire
 | LinkedIn | User's own posts via Marketing API | User pastes post text | Free | Cannot read other users' posts via API. |
 | Podcasts | RSS feed parsing + audio transcription | User uploads audio file or pastes transcript | Free–low | RSS is open. Transcription cost depends on provider. |
 | Newsletter / Email | User pastes or forwards email content | Direct text input | Free | No API for reading other people's newsletters. |
-| **Video upload** (.mp4, .mov, .webm) | Audio extracted via ffmpeg → transcribed to text via Whisper API / Deepgram | User pastes transcript | ~$0.006/min (Whisper) or ~$0.004/min (Deepgram) | Max 500 MB / 3h. Temp stored in GCS, auto-deleted after 24h. |
-| **Audio upload** (.mp3, .wav, .m4a) | Transcribed to text via Whisper API / Deepgram | User pastes transcript | ~$0.006/min (Whisper) or ~$0.004/min (Deepgram) | Max 100 MB / 3h. Same temp storage policy. |
+| **Video upload** (.mp4, .mov, .webm) | Audio extracted via FFmpeg → transcribed via Deepgram API | User pastes transcript | ~$0.006/min | Max 500 MB / 3h. Temp stored, auto-deleted after 24h. |
+| **Audio upload** (.mp3, .wav, .m4a) | Transcribed via Deepgram API | User pastes transcript | ~$0.006/min | Max 100 MB / 3h. Same temp storage policy. |
 | **Image upload** (.png, .jpg, .webp) | Vision LLM describes content + OCR extracts text | User types description | ~$0.01–0.05/image | Max 20 MB. Useful for screenshot-based style refs. |
 
 ### 9.3 Content Deploying (Outbound — Publishing Content)
@@ -472,10 +469,10 @@ Trend collection costs scale with Kova's growth:
 | Phase | Sources Enabled | Trend Collection Cost | DB Cost |
 |---|---|---|---|
 | MVP | Reddit, YouTube, Google Trends (free sources only) | $0 | $0 (Neon free tier) |
-| Launch | All 7 sources | $49-139/mo (Twitter + Exploding Topics) | $5/mo (Neon Launch) |
-| Scale | All sources + user niche-specific collection | $49-139/mo | Included in $69/mo (Neon Scale) |
+| Launch | All 7 sources | $49–139/mo (Twitter + Exploding Topics) | $5/mo (Neon Launch) |
+| Scale | All sources + user niche-specific collection | $49–139/mo | Included in $69/mo (Neon Scale) |
 
-Database storage for trend data is minimal (~1.8 GB for 90 days of full collection), well within Neon's included storage at every plan level. See Technical PRD Section 7 for detailed storage calculations.
+Database storage for trend data is minimal (~1.8 GB for 90 days of full collection), well within Neon's included storage at every plan level. See Technical PRD Section 14 for detailed storage calculations.
 
 ---
 
@@ -534,50 +531,50 @@ Per-platform customization, configured within each Brand:
 
 Kova uses AI models for every intelligent task — writing, transcription, video analysis, voice generation, and more. The AI/ML landscape changes extremely fast: new models appear weekly, pricing shifts, and today's best option may be outdated in months.
 
-Kova's approach: **every AI model is swappable.** Users and admins can choose which model powers each task, mixing self-hosted open-source models with commercial APIs depending on quality needs and budget.
+Kova's approach: **every AI model is swappable.** The system is API-first — all ML inference runs through commercial API providers. No self-hosted models, no GPU infrastructure to manage. CPU-only tools (FFmpeg, MediaPipe, PySceneDetect) run as lightweight libraries inside the application container.
+
+This keeps infrastructure simple and operational burden near zero. When API costs become significant (>$500/month), the Protocol architecture allows seamless migration to self-hosted models by writing a new adapter and changing a configuration variable.
 
 ### 11.2 User-Facing Model Settings
 
-Users can configure which AI model is used for each task in their settings dashboard:
+Users can configure which AI provider is used for each task in their settings dashboard:
 
-| Task | What It Does | Options |
+| Task | What It Does | Provider Options |
 |---|---|---|
-| **Writing AI** | Scripts, ideas, editing, analysis | Claude, GPT, Gemini, Grok, DeepSeek, Llama (self-hosted), Qwen (self-hosted) |
-| **Transcription** | Audio/video → text with timestamps | faster-whisper (self-hosted, free), WhisperX (self-hosted), OpenAI Whisper API |
-| **Video Understanding** | Visual content analysis | SmolVLM2 (self-hosted), Qwen-VL (self-hosted), Gemini Vision, GPT-4o Vision |
-| **Voice Generation** | Text → speech for voiceovers | Kokoro (self-hosted, free), Coqui (self-hosted), ElevenLabs |
-| **Image Generation** | Thumbnails, visual assets | Stable Diffusion XL (self-hosted), DALL-E |
+| **Writing AI** | Scripts, ideas, editing, analysis | Claude, GPT, Gemini, Grok, DeepSeek |
+| **Transcription** | Audio/video → text with timestamps and speaker labels | Deepgram, OpenAI Whisper API |
+| **Vision** | Visual content analysis | Reuses Writing AI (multimodal — Claude, GPT, Gemini all support image input) |
+| **Voice Generation** | Text → speech for voiceovers | OpenAI TTS, ElevenLabs |
+| **Image Generation** | Thumbnails, visual assets | Replicate, DALL-E |
 
-Default: Kova ships with recommended defaults per phase. Users can override per-task.
+Default: Kova ships with recommended defaults. Users can override per-task.
 
-### 11.3 Self-Hosted vs API Trade-offs
+### 11.3 Cost Implications
 
-| | Self-Hosted (HuggingFace models) | API (Claude, GPT, Gemini, etc.) |
+All AI costs are API-based and scale linearly with usage:
+
+| Task | Cost Per Unit | Notes |
 |---|---|---|
-| **Cost** | Free per-use (GPU cost only) | Pay per request ($0.001-0.05 per call) |
-| **Speed** | Depends on GPU | Consistent, fast |
-| **Privacy** | Data stays on your infrastructure | Data sent to provider |
-| **Quality** | Good — improving rapidly | Generally best-in-class |
-| **Maintenance** | You manage updates | Provider handles everything |
-| **Switching** | Change config, restart | Change config, restart |
+| Text Generation (LLM) | ~$0.01–0.05/request | Varies by model and prompt length |
+| Transcription | ~$0.006/min | Deepgram; includes diarization |
+| TTS | ~$0.015/1K chars | OpenAI TTS |
+| Image Generation | ~$0.003–0.04/image | Replicate (cheap) to DALL-E (quality) |
+| Embeddings | ~$0.0001/1K tokens | OpenAI Embeddings |
+| Vision | Included in LLM cost | Multimodal models handle image input |
 
-Both approaches use the same interface — switching between them requires only a configuration change, not a code change.
-
-### 11.4 Cost Implications
-
-| Phase | Recommended Setup | AI Cost/Month |
+| Phase | Estimated AI Cost/Month | Notes |
 |---|---|---|
-| **MVP** | API for writing (Claude/GPT), self-hosted for transcription (faster-whisper) | $10-50 |
-| **Launch** | Mix — API for complex tasks, self-hosted for volume tasks | $50-200 |
-| **Scale** | Mostly self-hosted on dedicated GPU, API only for premium features | $200-500 (GPU) |
+| **MVP** | $10–50 | Light usage, single user |
+| **Launch** | $50–200 | Growing user base |
+| **Scale** | $200–500+ | High volume; consider self-hosting at this point |
 
-> **Technical detail:** See Technical PRD Section 6 for full model catalog, Protocol design, GPU infrastructure, and configuration reference.
+> **Technical detail:** See Technical PRD Section 9 for full Protocol design, configuration reference, and self-hosting migration path.
 
 ---
 
 ## 12. Product Roadmap
 
-### Phase 1: Core Pipeline (Months 1-2)
+### Phase 1: Core Pipeline (Months 1–2)
 
 **Goal:** Users can create and run basic content pipelines.
 
@@ -694,4 +691,4 @@ These decisions require further research, user testing, or stakeholder input:
 
 ---
 
-*This document defines what Kova does and why. For implementation details — architecture, data models, APIs, project structure, and engineering roadmap — see the Technical PRD.*
+*This document defines what Kova does and why. For implementation details — architecture, data models, APIs, project structure, and engineering roadmap — see the Technical PRD. For MVP scope and timeline, see the MVP PRD.*
