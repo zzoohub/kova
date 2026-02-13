@@ -173,7 +173,7 @@ Scheduled pipelines require: saved style profile + configured niche + connected 
 | Feature | MVP Status |
 |---|---|
 | Create style from prompt, URL, article, image, video, audio | ✅ Full — all input types supported |
-| Style profile extraction (tone, voice, structure) | ✅ Full — LLM analysis |
+| Style profile extraction (composition, structure, pacing) | ✅ Full — LLM analysis |
 | Save/load/edit style profiles | ✅ Full — PostgreSQL CRUD |
 | Apply style to pipeline | ✅ Full — injected into LLM prompts |
 | Style preview | ✅ LLM generates sample paragraph |

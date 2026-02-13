@@ -42,9 +42,9 @@ Kova is an AI-agent-powered content creation platform that automates the entire 
 
 The platform handles every content format: video scripts, X/Twitter threads, LinkedIn posts, blog articles, podcasts, newsletters, and Instagram carousels. A single piece of source content can be automatically transformed into all of these formats simultaneously, each optimized for its target platform.
 
-Users operate on a spectrum of control. At one extreme, they delegate everything to AI agents: type a topic, walk away, and find finished content published across all connected platforms. At the other extreme, they use individual tools manually, controlling every detail. Most users land somewhere in between — setting style and persona, reviewing key outputs, and letting AI handle the rest.
+Users operate on a spectrum of control. At one extreme, they delegate everything to AI agents: type a topic, walk away, and find finished content published across all connected platforms. At the other extreme, they use individual tools manually, controlling every detail. Most users land somewhere in between — setting style and brand, reviewing key outputs, and letting AI handle the rest.
 
-The key differentiator is the Style Reference System. Users provide example content they admire (a tweet, a YouTube video, a blog post), and the system learns the style — the tone, rhythm, structure, hooks, and formatting patterns — without copying any information. That style is then applied when creating new content on completely different topics. Users build a personal library of saved styles and can mix attributes from multiple references.
+The key differentiator is the Style Reference System. Users provide example content that performs well (a viral tweet, a high-engagement YouTube video, a top-ranking blog post), and the system learns the content composition and editing style — the hook structure, section pacing, engagement placement, formatting patterns, and information density — without copying any information. That style is then applied when creating new content on completely different topics. The insight: successful content succeeds because of *how* it's composed and edited, not just *what* it says. Users build a personal library of saved styles and can mix composition attributes from multiple references.
 
 ---
 
@@ -68,7 +68,7 @@ Kova solves these problems with three core capabilities:
 
 **Multi-format transformation engine.** One source transforms into any output format. Write a longform article, and the system produces a YouTube video script, an X thread, a LinkedIn post, a newsletter, and an Instagram carousel — each optimized for its platform. Add a new format or platform at any time.
 
-**Style intelligence.** Instead of starting from a blank prompt every time, users teach the system their style. Provide a reference — any content you admire — and the system extracts the stylistic DNA: how it hooks the reader, how it structures ideas, how it paces sentences, how it formats text. That style becomes reusable across all future content, on any topic.
+**Style intelligence.** Instead of starting from a blank prompt every time, users teach the system proven content composition patterns. Provide a reference — any successful content — and the system extracts the structural DNA: how it hooks the audience, how it organizes sections, where it places engagement peaks, how it paces information, and how it formats for the platform. These composition and editing patterns become reusable across all future content, on any topic. Voice and tone are handled separately through Brand settings — Style is about *structure*, not *sound*.
 
 ---
 
@@ -108,11 +108,11 @@ Sarah is a tech creator who publishes on YouTube, X, and LinkedIn. She wants to 
 
 1. Sarah opens her dashboard and selects the "Idea to Everything" pipeline template.
 2. She types a topic: "Why most developers waste time on premature optimization."
-3. She selects her saved style profile: "Sarah's Tech Voice" (extracted months ago from her best-performing thread).
+3. She selects her saved style profile: "Sarah's Top Thread Structure" (extracted months ago from her best-performing thread's composition pattern).
 4. She clicks "Run" and walks away.
-5. The pipeline runs automatically: idea expansion → research → script writing → multi-format transform.
+5. The pipeline runs automatically: idea expansion → research → script writing → multi-format transform (using her style's composition patterns and her brand's voice settings).
 6. 20 minutes later, she receives a notification: "Content ready for review."
-7. She opens the review screen, sees a YouTube script, an X thread (12 posts), and a LinkedIn post — all in her voice.
+7. She opens the review screen, sees a YouTube script, an X thread (12 posts), and a LinkedIn post — all following the same proven composition pattern, in her voice.
 8. She approves all three. The system publishes to YouTube (scheduled for tomorrow 9am), posts the thread immediately on X, and publishes the LinkedIn post.
 
 ### 5.2 Journey: Guided Creation — "I Want Control at Key Steps"
@@ -127,17 +127,17 @@ Marcus runs a marketing agency. He manages 5 client accounts, each with a differ
 6. Pipeline pauses again at the final review gate. Marcus reviews the outputs, makes a small edit to the LinkedIn carousel, approves both.
 7. The thread publishes to Client A's X account. The carousel publishes to their LinkedIn. Marcus moves to Client B.
 
-### 5.3 Journey: Style Setup — "I Want to Sound Like This"
+### 5.3 Journey: Style Setup — "I Want to Structure Content Like This"
 
-Priya is a newsletter writer who admires several creators' styles. She wants to capture the best of each.
+Priya is a newsletter writer who notices that certain content formats consistently outperform others. She wants to capture those winning composition patterns.
 
 1. Priya opens the Style Library and clicks "New Style Profile."
-2. She pastes a URL to a viral X thread she admires. The system fetches it and analyzes the style.
-3. She sees the extracted profile: hook pattern ("personal experience + bold contrarian claim"), tone ("casual authority"), rhythm ("short punchy sentences, then one longer for context"), emoji usage ("strategic, one per post opening").
-4. She names it "Viral Thread Voice" and saves it.
-5. She creates another profile from a YouTube video she likes — this one captures the structure and engagement techniques.
-6. She creates a composite profile: hook pattern from the thread profile, structure from the YouTube profile, and her own brand's formatting from a third reference.
-7. She names the composite "Priya's Newsletter Voice" and applies it to her weekly newsletter pipeline. Every newsletter from now on follows this combined style automatically.
+2. She pastes a URL to a viral X thread with 50K+ likes. The system fetches it and analyzes the composition.
+3. She sees the extracted profile: hook pattern ("personal experience + bold contrarian claim in post 1"), content structure ("12 posts, setup-conflict-resolution arc"), engagement placement ("cliffhanger at post 3, surprising stat at post 7, callback at post 10"), formatting ("numbered with /, one idea per post, line break between ideas").
+4. She names it "Viral Thread Structure" and saves it.
+5. She creates another profile from a top-performing YouTube video — this one captures the section pacing, chapter structure, and how evidence is woven in.
+6. She creates a composite profile: hook pattern from the thread profile, section pacing from the YouTube profile, and her own brand's formatting conventions from a third reference.
+7. She names the composite "Priya's Newsletter Blueprint" and applies it to her weekly newsletter pipeline. Every newsletter from now on follows this combined composition pattern automatically — while her voice and tone come from her Brand settings.
 
 ### 5.4 Journey: Source Transformation — "Turn My Existing Content Into More"
 
@@ -155,7 +155,7 @@ David has a library of longform YouTube videos. He wants to extract more value f
 Alex is a solo entrepreneur who needs consistent content but has no time for daily creation.
 
 1. Alex opens the Pipeline Builder and selects the "Trend to Everywhere" template.
-2. He assigns his saved style profile: "Alex's Startup Voice."
+2. He selects his Brand ("Alex's Startup Brand") and a saved style profile.
 3. He selects target platforms: X, LinkedIn, and his WordPress blog.
 4. He sets the niche: "SaaS growth and bootstrapping."
 5. Instead of clicking "Run," he clicks "Schedule" and sets: every weekday at 10am.
@@ -264,26 +264,34 @@ Automated publishing with per-platform settings.
 
 ### 7.1 What Makes This Different
 
-Most AI content tools ask users to describe their desired style in a text prompt: "Write in a casual, engaging tone." This is vague and inconsistent. Different prompts produce wildly different results.
+Most AI content tools ask users to describe their desired output: "Write in a casual, engaging tone with a hook." This is vague and inconsistent. The same prompt produces wildly different structures every time.
 
-Kova takes a different approach: show, don't tell. Provide an example of content you admire, and the system reverse-engineers the style. It doesn't copy the content — it extracts the patterns behind the content. How the author hooks the reader. How ideas are structured. How sentences are paced. How emojis and formatting are used. These patterns become a reusable style profile that can be applied to any topic.
+Kova takes a different approach: show, don't tell. Provide an example of successful content, and the system reverse-engineers the **composition and editing patterns** that make it work. It doesn't copy the content or the creator's voice — it extracts the structural blueprint behind the content. How it opens to grab attention. How sections are organized. Where engagement peaks are placed. How information is paced across the piece. How formatting guides the reader's eye. These composition patterns become a reusable style profile that can be applied to any topic.
+
+**Style vs. Brand:** Kova separates two concepts that other tools conflate:
+- **Style** = *how content is composed and edited* — the structural patterns, section flow, hook techniques, engagement placement, and formatting decisions that make successful content work. This is extracted from reference content.
+- **Brand** = *who is speaking and how they sound* — voice, tone, vocabulary, perspective, and brand personality. This is configured in Brand settings and applied alongside any style.
+
+The same Style (e.g., "Viral Thread Structure") can be used by different creators who each have their own Brand. The composition pattern stays the same — the voice changes.
 
 ### 7.2 Style Profile Attributes
 
-When the system analyzes a reference, it extracts these attributes:
+When the system analyzes a reference, it extracts **composition and editing patterns** — the structural decisions that make content perform well. These are independent of voice/tone (which belongs to Brand settings).
 
 | Attribute | What It Captures | Example |
 |---|---|---|
-| Hook Pattern | How the content opens to grab attention | "Personal story + bold claim: 'I did X. Here's what nobody tells you.'" |
-| Structure | Overall organization and flow | "8-12 posts, each 1-2 sentences, clear narrative arc" |
-| Tone | Voice and attitude | "Casual authority — conversational but confident" |
-| Rhythm | Sentence length patterns and pacing | "Short. Punchy. Then a longer sentence for context." |
-| Emoji Usage | Frequency, placement, and purpose | "Strategic: one per post opening, never mid-sentence" |
-| Engagement Techniques | How the content maintains attention | "Cliffhanger at post 3, question at post 7, CTA at end" |
-| Formatting | Visual structure, spacing, markup | "Numbered (1/, 2/), line break between ideas, bold for emphasis" |
-| Vocabulary Level | Word complexity and domain usage | "Simple words, no jargon, uses daily life analogies" |
-| Perspective | Point of view and narrative approach | "First person storytelling with direct reader address" |
-| Platform Conventions | Platform-specific norms | "Thread uses '/' numbering, ends with 'Follow for more'" |
+| Hook Pattern | How the content opens to capture attention | "Bold contrarian claim + personal stake: 'Most people get X wrong. I lost $50K learning this.'" |
+| Content Structure | Overall organization, section count, narrative arc | "12 posts: setup (1-2), problem (3-5), solution (6-9), proof (10-11), CTA (12)" |
+| Section Pacing | How ideas are distributed and how deep each goes | "One key insight per post, no more than 2 sentences, alternating between claim and evidence" |
+| Transition Technique | How sections connect and maintain forward momentum | "Each post ends with an incomplete thought that pulls into the next; question bridges between major sections" |
+| Engagement Placement | Where attention hooks and interactive moments appear | "Cliffhanger at post 3, surprising stat at post 7, direct question at post 9, callback to hook at post 11" |
+| Closing / CTA Pattern | How the content wraps up and drives action | "Summarize 3 key points → single clear CTA → callback to opening hook for narrative closure" |
+| Formatting & Layout | Visual structure, numbering, whitespace, emphasis | "Numbered (1/, 2/), line break between ideas, bold for key phrases, no walls of text" |
+| Information Density | How much information per unit of content | "One idea per post max, heavy white space, data points limited to 1 per section to avoid overload" |
+| Evidence & Example Pattern | How data, stories, and examples support claims | "Every claim backed by one concrete example or stat; alternates anecdote → data → anecdote" |
+| Platform Conventions | Platform-specific structural norms and optimization | "Thread uses '/' numbering, first post works standalone for retweets, last post has CTA + pin-worthy summary" |
+
+> **Note:** Attributes like tone, vocabulary level, perspective, and emoji style are part of **Brand settings** (Section 10.1), not Style. A user's Style defines the structural blueprint; their Brand defines how they sound within that structure.
 
 ### 7.3 Input Types
 
@@ -298,19 +306,19 @@ Every input serves **dual purpose** — it can be used as a style reference (lea
 | **Video** | Uploaded .mp4, .mov, .webm — talks, tutorials, vlogs (max 500 MB / 3h) | Extract audio → transcribe → optional keyframe analysis | ~$0.006/min |
 | **Audio** | Uploaded .mp3, .wav, .m4a — podcasts, interviews (max 100 MB / 3h) | Transcribe to text | ~$0.006/min |
 
-**As style reference:** System extracts patterns (tone, hooks, rhythm, formatting) → saves as reusable style profile.
+**As style reference:** System extracts composition patterns (hooks, structure, pacing, formatting) → saves as reusable style profile.
 
 **As source content:** System transforms into multiple output formats (threads, posts, scripts, newsletters, etc.).
 
 ### 7.4 Multi-Reference Compositing
 
-Users can build hybrid styles by mixing attributes from multiple sources:
+Users can build hybrid styles by mixing composition attributes from multiple successful content pieces:
 
-- Take the hook pattern from Creator A's viral thread.
-- Take the tone from Creator B's YouTube videos.
-- Take the formatting from your own brand guidelines.
+- Take the hook pattern from a viral X thread (50K+ likes).
+- Take the section pacing from a top-performing YouTube video (high retention curve).
+- Take the formatting and closing pattern from your own best-performing newsletter.
 
-Each reference is tagged with which attributes to extract. Conflicts (two references providing different "tone" attributes) are resolved by user-set priority order. The result is a single composite style profile that captures the best of each source.
+Each reference is tagged with which composition attributes to extract. Conflicts (two references providing different "content structure" attributes) are resolved by user-set priority order. The result is a single composite style profile that captures the best structural patterns from each source — a proven content blueprint.
 
 ### 7.5 Style Library
 
@@ -473,31 +481,48 @@ Database storage for trend data is minimal (~1.8 GB for 90 days of full collecti
 
 ## 10. User Configuration
 
-### 9.1 Persona and Brand Settings
+### 10.1 Brands
 
-Global defaults that apply across all AI interactions:
+Users create and manage multiple **Brands** — each representing a distinct identity, voice, and audience. A solo creator might have one personal brand. An agency might have 10+ client brands. A creator with multiple channels (tech YouTube + lifestyle YouTube) creates a Brand for each.
+
+Brand is separate from Style — **Style defines how content is composed** (structure, pacing, formatting), while **Brand defines who is speaking** (voice, tone, identity). The same Style can be used across different Brands.
+
+**Each Brand contains:**
 
 - Brand name and description.
-- Default voice and tone (e.g., "professional but approachable").
+- Voice and tone (e.g., "professional but approachable," "casual and irreverent").
 - Vocabulary preferences (words to use, words to avoid).
+- Perspective and point of view (first person, second person, etc.).
+- Emoji and symbol usage preferences.
 - Target audience description.
 - Content guidelines and guardrails.
+- Connected platform accounts (which X account, which YouTube channel, etc.).
 
-### 9.2 Platform-Specific Settings
+**Brand Library** works like the Style Library:
+- Browse all Brands with key attributes visible.
+- Create, edit, duplicate, delete Brands.
+- Set a default Brand for quick pipeline runs.
+- Switch Brand when creating or running a pipeline.
 
-Per-platform customization:
+**Pipeline run = Brand + Style + Pipeline steps.** When running a pipeline, users select which Brand (identity) and which Style (composition pattern) to apply.
+
+### 10.2 Platform-Specific Settings
+
+Per-platform customization, configured within each Brand:
 
 - Default hashtag sets.
 - Preferred posting schedule and time zones.
 - Platform-specific tone adjustments (more casual on X, more professional on LinkedIn).
 - Media preferences (carousel style, thumbnail templates).
 - Draft vs. auto-publish preferences.
+- Connected account credentials (OAuth per platform per Brand).
 
-### 9.3 Pipeline Defaults
+### 10.3 Pipeline Defaults
 
 - Default pipeline template for quick starts.
 - Default human gate placement.
 - Default style profile.
+- Default Brand.
 - Multi-choice preferences (how many variations to generate at decision points).
 - Auto-approval rules (approve automatically if confidence is above threshold).
 

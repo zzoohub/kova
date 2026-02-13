@@ -503,7 +503,7 @@ IdeaGeneratorStep queries processed topics at runtime
 
 ### 10.5 JSONB Strategy
 
-JSONB columns are used for rapidly evolving schemas: pipeline configs, style attributes, step results, user persona settings. This avoids migration churn during early development while keeping queryability.
+JSONB columns are used for rapidly evolving schemas: pipeline configs, style attributes, step results, user brand settings. This avoids migration churn during early development while keeping queryability.
 
 ---
 

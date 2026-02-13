@@ -3,7 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
-Kova — AI-agent-powered multi-format content creation platform. Users create once, publish everywhere. Key differentiator: Style Reference System that extracts stylistic patterns from example content.
+Kova — AI-agent-powered multi-format content creation platform. Users create once, publish everywhere. Key differentiator: Style Reference System that extracts content composition and editing patterns (structure, pacing, hooks, formatting) from successful content — separate from voice/tone (handled by Brand).
 
 Monorepo:
 - `/server` — Python / FastAPI (hexagonal architecture)
@@ -26,7 +26,7 @@ uv sync                                # Install dependencies (lockfile: uv.lock
 bun dev                                # Next.js dev server
 bun run build                          # Production build
 bun run lint                           # ESLint
-bun test                               # Run tests
+bun run test                               # Run tests
 ```
 
 ### Infra (`cd infra`)
@@ -88,7 +88,7 @@ INBOUND (FastAPI Routes, Cloud Tasks Handler, Webhooks)
 |---|---|---|
 | pipeline | Orchestration, run state, step execution | Pipeline, PipelineRun, StepConfig, PipelineContext |
 | steps | Step execution contracts and registry | StepInput, StepOutput, StepProgress |
-| style | Reference analysis, profile management | StyleProfile, StyleAttribute, ReferenceSource |
+| style | Composition pattern extraction, profile management | StyleProfile, StyleAttribute, ReferenceSource |
 | content | Assets, transformations, deployment | ContentAsset, DeployRecord, TransformResult |
 | trends | Trend signals, topic aggregation | TrendSignal, TrendTopic |
 
@@ -201,17 +201,28 @@ outbound/                          # ━━ Implements domain Protocols ━━
 1. **nextjs** (implementation)
 2. **vercel-react-best-practices** (review)
 
-### Folder Structure (Feature-Sliced Design)
+### Folder Structure (FSD + Next.js App Router)
+
 ```
-app/                 # Next.js App Router (file-based routing)
-├── layout.tsx       # Root layout
-├── page.tsx         # Home (/)
-└── some-page/
-    └── page.tsx     # /some-page (routing + page composition)
-src/
-├── app/             # App-wide settings, providers, global styles
+app/                 # Next.js App Router — routing only (thin re-exports)
+├── layout.tsx       # Root layout (imports @/app/providers, @/app/globals.css)
+├── page.tsx         # import { DashboardPage } from '@/views/dashboard'
+├── brands/
+├── content/
+├── pipelines/
+├── review/
+├── settings/
+├── styles/
+└── trends/
+
+src/                 # All FSD layers
+├── app/             # FSD app-layer: providers, global styles (NO routing files)
+│   ├── globals.css
 │   └── providers/
-├── widgets/         # Large composite blocks (Header, Sidebar, Feed)
+├── views/           # FSD pages layer (named "views" to avoid Next.js pages/ conflict)
+│   └── dashboard/   # Compose widgets into full page layouts
+│       └── ui/
+├── widgets/         # Sections/blocks (Header, Sidebar, StatsCards, RecentRuns)
 ├── features/        # User interactions (auth, send-comment, add-to-cart)
 │   └── auth/
 │       ├── ui/
@@ -231,15 +242,17 @@ src/
 ```
 
 ### FSD Import Rules
-app → widgets → features → entities → shared (never import upward)
+app(routing) → views → widgets → features → entities → shared (never import upward)
+
+`src/views/` = FSD "pages" layer (renamed to avoid Next.js `pages/` directory conflict).
 
 ## Core Tech stacks
-- **Next.js**: React framework for server-rendered applications.
-- **TypeScript**: Static type checker for JavaScript.
-- **Tailwind CSS**: Utility-first CSS framework.
-- **Tanstack Query**: Data fetching and caching library for client components.
-- **Zod**: TypeScript-first schema validation library.
-- **Shadcn-ui**: Design system.
+- **Next.js**: Nextjs 16
+- **TypeScript**: TypeScript 5.2 (most stricted config)
+- **Tailwind CSS**: Tailwind 4.2
+- **Tanstack Query**: Tanstack Query 5.2
+- **Zod**: Zod 3.21.4
+- **Shadcn-ui**: Shadcn-ui 2.2.0
 
 ### Conventions
-- **i18n**: all texts should be in English and Korean, and should be consistent across the app.
+- **i18n**: all pages can be translated into english/korean languages.

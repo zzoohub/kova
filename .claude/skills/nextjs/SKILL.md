@@ -17,20 +17,28 @@ references:
 
 ---
 
-## Project Structure (Feature-Sliced Design)
+## Project Structure (FSD + Next.js App Router)
 
 **For Feature-Sliced Design use Context7.**
 
+Root `app/` is for Next.js routing only. `src/` holds all FSD layers.
+`src/app/` is the FSD app-layer (providers, global styles), NOT routing.
+
 ```
-app/                 # Next.js App Router (file-based routing)
-├── layout.tsx       # Root layout
-├── page.tsx         # Home (/)
+app/                 # Next.js App Router — routing only (thin re-exports)
+├── layout.tsx       # Root layout (imports @/app/providers, @/app/globals.css)
+├── page.tsx         # import { DashboardPage } from '@/views/dashboard'
 └── some-page/
-    └── page.tsx     # /some-page (routing + page composition)
-src/
-├── app/             # App-wide settings, providers, global styles
+    └── page.tsx     # Thin: import page from @/views/, render it
+
+src/                 # All FSD layers
+├── app/             # FSD app-layer: providers, global styles (NO routing files)
+│   ├── globals.css
 │   └── providers/
-├── widgets/         # Large composite blocks (Header, Sidebar, Feed)
+├── views/           # FSD pages layer (named "views" to avoid Next.js pages/ conflict)
+│   └── dashboard/   # Compose widgets into full page layouts
+│       └── ui/
+├── widgets/         # Sections/blocks (Header, Sidebar, StatsCards, RecentRuns)
 ├── features/        # User interactions (auth, send-comment, add-to-cart)
 │   └── auth/
 │       ├── ui/
@@ -53,10 +61,11 @@ src/
 
 | Layer | Can import from | Cannot import from |
 |-------|-----------------|-------------------|
-| `app` | All layers below | - |
-| `widgets` | features, entities, shared | app |
-| `features` | entities, shared | app, widgets |
-| `entities` | shared | app, widgets, features |
+| `app/` (routing) | views, widgets, shared | - |
+| `views` | widgets, features, entities, shared | app |
+| `widgets` | features, entities, shared | app, views |
+| `features` | entities, shared | app, views, widgets |
+| `entities` | shared | app, views, widgets, features |
 | `shared` | - | All layers above |
 
 **Rule: Layers can only import from layers below. Never above.**
