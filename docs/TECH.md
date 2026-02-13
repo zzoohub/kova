@@ -2,10 +2,22 @@
 
 | | |
 |---|---|
-| **Version** | 4.0 |
+| **Version** | 4.1 |
 | **Date** | February 2025 |
 | **Status** | Draft |
-| **Companion** | Product PRD, MVP PRD |
+| **Companion** | Product PRD v2.1, MVP PRD |
+
+---
+
+## Changelog (v4.1)
+
+| Change | Section | Rationale |
+|---|---|---|
+| Removed `POST /styles/composite` endpoint | §8.6 | Multi-reference compositing removed from product scope. Manual attribute editing covers power-user needs. |
+| Removed composite-related data flows | §15.3 | Style reference flow simplified to single-reference extraction only. |
+| Added style preview validation to data flow | §15.3 | Extraction now includes mandatory preview generation before save. |
+| Updated Style domain description | §2.1 | Removed composite references from bounded context. |
+| Updated Protocol Catalog | §2.2 | No protocol changes needed — `StyleProfileRepository` and `LLMProvider` already support single-reference workflow. |
 
 ---
 
@@ -55,7 +67,7 @@ The bottleneck is LLM API latency (2–30s), not server processing speed. New AI
 | brand | Brand identity, voice, platform accounts | Brand, BrandSettings, PlatformAccount |
 | pipeline | Orchestration, run state, step execution, templates | Pipeline, PipelineRun, PipelineTemplate, PipelineVersion, StepConfig, PipelineContext |
 | steps | Step execution contracts and registry | StepInput, StepOutput, StepProgress |
-| style | Reference analysis, profile management | StyleProfile, StyleAttribute, ReferenceSource |
+| style | Reference analysis, profile management, preview validation | StyleProfile, StyleAttribute, ReferenceSource |
 | content | Assets, transformations, deployment | ContentAsset, DeployRecord, TransformResult |
 | trends | Trend signals, topic aggregation | TrendSignal, TrendTopic |
 | notifications | In-app notification delivery | Notification, NotificationPreference |
@@ -387,13 +399,12 @@ Every API request extracts `user_id` from JWT → looks up `org_id` via OrgMembe
 | Method | Path | Purpose |
 |---|---|---|
 | GET | `/styles` | List style profiles |
-| POST | `/styles` | Create style profile |
+| POST | `/styles` | Create style profile (from reference analysis) |
 | GET | `/styles/:id` | Get style profile |
-| PUT | `/styles/:id` | Update style profile |
+| PUT | `/styles/:id` | Update style profile (manual attribute editing) |
 | DELETE | `/styles/:id` | Delete style profile |
 | POST | `/styles/:id/clone` | Duplicate style profile |
-| POST | `/styles/composite` | Create composite from multiple profiles |
-| POST | `/styles/preview` | Generate sample paragraph using style |
+| POST | `/styles/preview` | Generate sample content using style (for validation) |
 
 ### 8.7 Content & Publishing
 
@@ -669,7 +680,7 @@ Configuration is env-var driven. Switching phases = change config, no code chang
 | Pipeline versions | DB (JSONB config) | Version history per pipeline |
 | Pipeline templates | DB (JSONB config) | Pre-built + user-saved, `is_template` flag |
 | Pipeline runs | DB | State, context, results |
-| Style profiles | DB (JSONB attributes) | Extracted patterns |
+| Style profiles | DB (JSONB attributes) | Extracted patterns from single reference, manually editable |
 | Content assets | DB (text) + R2 (files) | Generated content, variation_index for multi-choice |
 | Deploy records | DB | What published where/when, scheduled_at |
 | Notifications | DB | In-app notifications with read status |
@@ -702,11 +713,14 @@ User selects Brand + Style + Pipeline → creates PipelineRun
 
 **Style Reference:**
 ```
-User provides reference (URL, text, upload)
+User provides single reference (URL, text, upload)
   → ReferenceFetcher resolves to text
   → LLM extracts style attributes (composition patterns only, not voice)
-  → StyleProfile saved (JSONB, editable)
+  → System generates preview sample using extracted attributes
+  → User validates preview (adjust attributes and re-preview if needed)
+  → StyleProfile saved (JSONB, manually editable post-save)
   → Applied to future runs via prompt injection
+  → Users can edit individual attributes and re-preview at any time
 ```
 
 **Trend:**
@@ -795,6 +809,7 @@ Cloud Scheduler → Collectors → Raw signals in DB
 9. **Style, Not Information.** Reference system extracts how, not what. Pure patterns applicable to any topic.
 10. **Brand and Style Are Separate.** Brand = who is speaking. Style = how content is composed. Selected independently per pipeline run.
 11. **Org-Scoped Everything.** Resources belong to orgs, not users. Teams share by default. Fine-grained permissions are additive.
+12. **Single Reference, Proven First.** Style extraction from one reference must be reliable before considering multi-reference features. Manual editing bridges the gap.
 
 ---
 
@@ -817,7 +832,8 @@ Cloud Scheduler → Collectors → Raw signals in DB
 | Content saturation | Medium | Style differentiation over volume; quality metrics |
 | Multi-choice variation cost | Low | Multiplies LLM calls by N; user-configurable, default 1 |
 | Platform scheduling gaps | Low | Not all platforms support native scheduling; draft/export fallback |
+| Style extraction quality | High | Preview validation before save; manual attribute editing; few-shot reference inclusion in generation prompts; iterative prompt improvement |
 
 ---
 
-*For product features see Product PRD.*
+*For product features see Product PRD v2.1.*

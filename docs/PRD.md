@@ -6,11 +6,24 @@ Video • Threads • Posts • Articles • Audio • Newsletters
 
 | | |
 |---|---|
-| **Version** | 2.0 |
+| **Version** | 2.1 |
 | **Date** | February 2025 |
 | **Status** | Draft |
 | **Type** | Product Requirements |
 | **Audience** | Product, Design, Stakeholders |
+
+---
+
+## Changelog (v2.1)
+
+| Change | Section | Rationale |
+|---|---|---|
+| Removed Multi-Reference Compositing feature | §1, §7.4, §7.5 | Core style extraction is unproven; compositing adds complexity on top of unsolved problem. Manual editing of extracted attributes covers power-user needs. Revisit when single-reference extraction is validated. |
+| Simplified Priya's Style Setup journey | §5.3 | Removed composite profile steps (5-7). Journey now focuses on single-reference extraction and manual editing. |
+| Removed composite API endpoint | §7.5 | `POST /styles/composite` removed. |
+| Removed compositing from Phase 2 roadmap | §12 | Reduces Phase 2 scope to proven single-reference extraction. |
+| Added style preview validation step | §7.3, §7.5 | After extraction, system generates a sample paragraph for user validation before saving. |
+| Removed content performance tracking as a product feature | §12, §13.3 | Cross-platform engagement metrics are unreliable and unmeasurable. Replaced with links to platform-native analytics. Internal operational metrics (approval rates, edit rates) retained. |
 
 ---
 
@@ -42,7 +55,7 @@ The platform handles every content format: video scripts, X/Twitter threads, Lin
 
 Users operate on a spectrum of control. At one extreme, they delegate everything to AI agents: type a topic, walk away, and find finished content published across all connected platforms. At the other extreme, they use individual tools manually, controlling every detail. Most users land somewhere in between — setting style and brand, reviewing key outputs, and letting AI handle the rest.
 
-The key differentiator is the Style Reference System. Users provide example content that performs well (a viral tweet, a high-engagement YouTube video, a top-ranking blog post), and the system learns the content composition and editing style — the hook structure, section pacing, engagement placement, formatting patterns, and information density — without copying any information. That style is then applied when creating new content on completely different topics. The insight: successful content succeeds because of *how* it's composed and edited, not just *what* it says. Users build a personal library of saved styles and can mix composition attributes from multiple references.
+The key differentiator is the Style Reference System. Users provide example content that performs well (a viral tweet, a high-engagement YouTube video, a top-ranking blog post), and the system learns the content composition and editing style — the hook structure, section pacing, engagement placement, formatting patterns, and information density — without copying any information. That style is then applied when creating new content on completely different topics. The insight: successful content succeeds because of *how* it's composed and edited, not just *what* it says. Users build a personal library of saved styles and can manually refine extracted attributes to fine-tune their content blueprints.
 
 ---
 
@@ -132,10 +145,11 @@ Priya is a newsletter writer who notices that certain content formats consistent
 1. Priya opens the Style Library and clicks "New Style Profile."
 2. She pastes a URL to a viral X thread with 50K+ likes. The system fetches it and analyzes the composition.
 3. She sees the extracted profile: hook pattern ("personal experience + bold contrarian claim in post 1"), content structure ("12 posts, setup-conflict-resolution arc"), engagement placement ("cliffhanger at post 3, surprising stat at post 7, callback at post 10"), formatting ("numbered with /, one idea per post, line break between ideas").
-4. She names it "Viral Thread Structure" and saves it.
-5. She creates another profile from a top-performing YouTube video — this one captures the section pacing, chapter structure, and how evidence is woven in.
-6. She creates a composite profile: hook pattern from the thread profile, section pacing from the YouTube profile, and her own brand's formatting conventions from a third reference.
-7. She names the composite "Priya's Newsletter Blueprint" and applies it to her weekly newsletter pipeline. Every newsletter from now on follows this combined composition pattern automatically — while her voice and tone come from her Brand settings.
+4. The system generates a short sample paragraph using the extracted style on a random topic. Priya reviews it to confirm the structure feels right — if not, she can adjust attributes and preview again.
+5. She names it "Viral Thread Structure" and saves it.
+6. She applies the style to her weekly newsletter pipeline. Every newsletter from now on follows this composition pattern automatically — while her voice and tone come from her Brand settings.
+7. Over time, Priya creates additional style profiles from other high-performing content — a YouTube video structure, a LinkedIn post format — and switches between them depending on the output format.
+8. When she wants to fine-tune a style, she edits the extracted attributes directly in the Style Library (e.g., changing the hook pattern from "contrarian claim" to "surprising statistic"), previews the change, and saves.
 
 ### 5.4 Journey: Source Transformation — "Turn My Existing Content Into More"
 
@@ -303,30 +317,23 @@ Every input serves **dual purpose** — it can be used as a style reference (lea
 | **Video** | Uploaded .mp4, .mov, .webm — talks, tutorials, vlogs (max 500 MB / 3h) | Extract audio → transcribe → optional keyframe analysis | ~$0.006/min |
 | **Audio** | Uploaded .mp3, .wav, .m4a — podcasts, interviews (max 100 MB / 3h) | Transcribe to text | ~$0.006/min |
 
-**As style reference:** System extracts composition patterns (hooks, structure, pacing, formatting) → saves as reusable style profile.
+**As style reference:** System extracts composition patterns (hooks, structure, pacing, formatting) → generates a preview sample for user validation → saves as reusable style profile.
 
 **As source content:** System transforms into multiple output formats (threads, posts, scripts, newsletters, etc.).
 
-### 7.4 Multi-Reference Compositing
-
-Users can build hybrid styles by mixing composition attributes from multiple successful content pieces:
-
-- Take the hook pattern from a viral X thread (50K+ likes).
-- Take the section pacing from a top-performing YouTube video (high retention curve).
-- Take the formatting and closing pattern from your own best-performing newsletter.
-
-Each reference is tagged with which composition attributes to extract. Conflicts (two references providing different "content structure" attributes) are resolved by user-set priority order. The result is a single composite style profile that captures the best structural patterns from each source — a proven content blueprint.
-
-### 7.5 Style Library
+### 7.4 Style Library
 
 Style profiles are saved, named, and organized in a personal library:
 
 - Browse all saved profiles with preview of key attributes.
 - Search and filter by name, source type, or attribute.
 - Apply any profile to any pipeline with one click.
-- Edit profiles manually (tweak tone, adjust rhythm description, etc.).
+- Edit extracted attributes manually (tweak hook pattern, adjust pacing description, change formatting rules, etc.).
+- Preview changes: generate a sample paragraph using edited attributes to validate before saving.
 - Share profiles with team members.
 - Duplicate and modify existing profiles.
+
+> **Future consideration:** If users consistently edit profiles to combine attributes from different references (e.g., taking the hook pattern from one profile and the pacing from another), this signals demand for a formal multi-reference compositing feature. Revisit when single-reference extraction quality is validated and user editing patterns are understood.
 
 ---
 
@@ -589,10 +596,10 @@ All AI costs are API-based and scale linearly with usage:
 **Goal:** Users can capture styles from reference content and apply them.
 
 - Reference input: URL, file upload, pasted text.
-- Style analysis and profile extraction.
+- Style analysis and single-reference profile extraction.
+- Style preview: generate sample content using extracted style for validation before saving.
 - Style library: save, browse, apply, edit profiles.
-- Multi-reference compositing.
-- Style preview before pipeline execution.
+- Manual attribute editing with preview regeneration.
 
 ### Phase 3: Multi-Format Engine (Month 4)
 
@@ -619,7 +626,7 @@ All AI costs are API-based and scale linearly with usage:
 
 - Additional platforms: Instagram, TikTok, Reddit, Discord, podcast platforms.
 - Team collaboration: shared pipelines, shared style libraries, roles and permissions.
-- Analytics: content performance tracking across platforms.
+- Analytics: link to platform-native analytics dashboards (YouTube Studio, X Analytics, etc.) from publishing history.
 - Advanced pipeline features: conditional branching, retry strategies, scheduling.
 - Content calendar: visual overview of scheduled content across all platforms.
 - Cost tracking and usage management.
@@ -654,7 +661,6 @@ All AI costs are API-based and scale linearly with usage:
 |---|---|---|
 | First-Pass Approval Rate | % of AI outputs approved without edits | >70% |
 | Rejection Rate | % of AI outputs rejected (not just edited) | <5% |
-| Published Content Performance | Engagement rates of AI-generated vs manual content | Within 80% of manual |
 | Style Consistency Score | Internal metric: style adherence across outputs | >85% |
 
 ---
@@ -664,7 +670,7 @@ All AI costs are API-based and scale linearly with usage:
 | Risk | Impact | Mitigation |
 |---|---|---|
 | AI output quality inconsistency | Users lose trust if quality varies widely | Human gates as safety net; style profiles improve consistency; A/B testing of prompts |
-| Style extraction accuracy | Poor style matching defeats the key differentiator | Editable profiles; human review after analysis; iterative prompt improvement |
+| Style extraction accuracy | Poor style matching defeats the key differentiator | Editable profiles; preview validation before saving; human review after analysis; iterative prompt improvement |
 | Platform API changes or restrictions | Deployment features break without warning | Platform-agnostic design; draft/export fallback; multi-platform resilience |
 | Content saturation | AI-generated content floods platforms, reducing engagement | Focus on style differentiation, not volume; quality metrics over quantity |
 | Copyright and originality concerns | Users might try to copy content, not just style | System explicitly separates style from information; no content reproduction |
@@ -691,4 +697,4 @@ These decisions require further research, user testing, or stakeholder input:
 
 ---
 
-*This document defines what Kova does and why. For implementation details — architecture, data models, APIs, project structure, and engineering roadmap — see the Technical PRD. For MVP scope and timeline, see the MVP PRD.*
+*This document defines what Kova does and why. For implementation details — architecture, data models, APIs, project structure, and engineering roadmap — see the Technical PRD.*
