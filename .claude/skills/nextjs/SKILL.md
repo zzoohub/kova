@@ -153,8 +153,14 @@ function DataDisplay({ dataPromise }: { dataPromise: Promise<Data> }) {
 |------------|----------|
 | Server data in Server Component | Direct fetch (no library) |
 | Server data in Client Component | TanStack Query |
-| Form input | useState |
-| Global client (theme, cart) | Zustand + persist |
+| URL state (filters, pagination, tabs) | nuqs (`useQueryState` / `useQueryStates`) |
+| Form (most cases) | Server Actions + `useActionState` + Zod |
+| Form (complex interactive) | TanStack Form + Zod → Server Action |
+| Auth | Server session (cookie) + React Context |
+| Complex wizard (multi-step) | Zustand → Server Action |
+| Local UI | useState |
+
+**Rule: Server Actions are the default for forms. Use TanStack Form only when you need instant client-side validation, dynamic field arrays, or conditional fields. Zustand only for cross-step wizard state.**
 
 ---
 

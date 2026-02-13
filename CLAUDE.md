@@ -205,6 +205,8 @@ outbound/                          # ━━ Implements domain Protocols ━━
 - **TypeScript**: TypeScript 5.2 (most stricted config)
 - **Tailwind CSS**: Tailwind 4.2
 - **Tanstack Query**: Tanstack Query 5.2
+- **TanStack Form**: TanStack Form (complex forms only; most forms use Server Actions)
+- **nuqs**: Type-safe URL search params state manager
 - **Zod**: Zod 3.21.4
 - **Shadcn-ui**: Shadcn-ui 2.2.0
 
