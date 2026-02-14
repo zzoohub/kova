@@ -191,7 +191,7 @@ export function StyleDetailPage({ id }: StyleDetailContentProps) {
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <p className="text-sm text-muted-foreground">
-            Generate a sample paragraph in this style to see how it sounds.
+            Generate a sample paragraph using this composition style to see how it structures content.
           </p>
           <div className="rounded-md border bg-muted/50 p-4 min-h-[80px]">
             <p className="text-sm text-muted-foreground italic">

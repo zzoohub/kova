@@ -6,6 +6,7 @@ export type MockContent = {
   status: "draft" | "published" | "scheduled";
   publishedAt: Date | null;
   pipelineName: string;
+  analyticsUrl?: string;
 };
 
 export const mockContent: MockContent[] = [
@@ -17,6 +18,7 @@ export const mockContent: MockContent[] = [
     status: "published",
     publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 6),
     pipelineName: "X Thread Generator",
+    analyticsUrl: "https://analytics.x.com/post/1234567890",
   },
   {
     id: "cnt_02",
@@ -26,6 +28,7 @@ export const mockContent: MockContent[] = [
     status: "published",
     publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 24),
     pipelineName: "LinkedIn Thought Leadership",
+    analyticsUrl: "https://www.linkedin.com/analytics/post/1234567890",
   },
   {
     id: "cnt_03",
@@ -53,5 +56,6 @@ export const mockContent: MockContent[] = [
     status: "published",
     publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 48),
     pipelineName: "Newsletter Digest",
+    analyticsUrl: "https://buttondown.com/analytics/issue-47",
   },
 ];

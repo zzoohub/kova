@@ -77,14 +77,14 @@ describe("mockStyleDetail", () => {
   it("has expected attribute labels", () => {
     const expectedLabels = [
       "Hook Pattern",
-      "Tone",
-      "Rhythm",
-      "Structure",
-      "Emoji Usage",
-      "Engagement Techniques",
-      "Formatting",
-      "Vocabulary Level",
-      "Perspective",
+      "Content Structure",
+      "Section Pacing",
+      "Transition Technique",
+      "Engagement Placement",
+      "Formatting & Layout",
+      "Closing/CTA Pattern",
+      "Information Density",
+      "Evidence & Example Pattern",
       "Platform Conventions",
     ];
 
@@ -151,19 +151,19 @@ describe("mockStyleDetail", () => {
     expect(hookPattern?.value).toContain("bold contrarian claim");
   });
 
-  it("has Tone attribute with expected content", () => {
-    const tone = mockStyleDetail.attributes.find(
-      (attr) => attr.label === "Tone"
+  it("has Content Structure attribute with expected content", () => {
+    const structure = mockStyleDetail.attributes.find(
+      (attr) => attr.label === "Content Structure"
     );
-    expect(tone).toBeDefined();
-    expect(tone?.value).toContain("Casual authority");
+    expect(structure).toBeDefined();
+    expect(structure?.value).toContain("8-12 posts per thread");
   });
 
-  it("has Rhythm attribute with expected content", () => {
-    const rhythm = mockStyleDetail.attributes.find(
-      (attr) => attr.label === "Rhythm"
+  it("has Section Pacing attribute with expected content", () => {
+    const pacing = mockStyleDetail.attributes.find(
+      (attr) => attr.label === "Section Pacing"
     );
-    expect(rhythm).toBeDefined();
-    expect(rhythm?.value).toContain("Short. Punchy.");
+    expect(pacing).toBeDefined();
+    expect(pacing?.value).toContain("Short. Punchy.");
   });
 });

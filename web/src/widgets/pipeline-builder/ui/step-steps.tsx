@@ -60,6 +60,12 @@ const AVAILABLE_STEPS: AvailableStep[] = [
     category: "Generate",
   },
   {
+    id: "visual-agent",
+    name: "Visual Agent",
+    description: "Creates image prompts, thumbnails, and visual descriptions",
+    category: "Generate",
+  },
+  {
     id: "content-editor",
     name: "Content Editor",
     description: "Polish and refine generated content",
@@ -118,6 +124,43 @@ function StepConfigFields({ step }: { step: BuilderStep }) {
           ? { ...s, config: { ...s.config, [key]: value } }
           : s
       )
+    );
+  }
+
+  if (step.id.startsWith("visual-agent")) {
+    return (
+      <div className="flex flex-col gap-3 pt-2">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-medium text-muted-foreground">
+            Output type
+          </label>
+          <Select
+            value={step.config["outputType"] ?? "all"}
+            onValueChange={(v) => updateConfig("outputType", v)}
+          >
+            <SelectTrigger className="h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="thumbnail">Thumbnail</SelectItem>
+              <SelectItem value="image_prompt">Image Prompt</SelectItem>
+              <SelectItem value="visual_description">Visual Description</SelectItem>
+              <SelectItem value="all">All</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-medium text-muted-foreground">
+            Style reference
+          </label>
+          <Input
+            className="h-8 text-xs"
+            placeholder="e.g. minimalist, cinematic, flat illustration"
+            value={step.config["styleReference"] ?? ""}
+            onChange={(e) => updateConfig("styleReference", e.target.value)}
+          />
+        </div>
+      </div>
     );
   }
 

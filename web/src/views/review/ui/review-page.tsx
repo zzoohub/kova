@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { CheckSquare } from "lucide-react";
+import { useState, useMemo, useCallback } from "react";
+import { CheckSquare, CheckCheck, X } from "lucide-react";
 import { PageHeader } from "@/shared/ui/page-header";
 import { EmptyState } from "@/shared/ui/empty-state";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
+import { Button } from "@/shared/ui/button";
 import {
   Select,
   SelectContent,
@@ -34,6 +35,8 @@ const SORT_OPTIONS: Array<{ value: SortOrder; label: string }> = [
 export function ReviewPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [sortOrder, setSortOrder] = useState<SortOrder>("oldest");
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const filteredReviews = useMemo(() => {
     const reviews: ReviewItem[] = mockReviews;
@@ -52,6 +55,42 @@ export function ReviewPage() {
 
     return sorted;
   }, [statusFilter, sortOrder]);
+
+  const pendingReviews = useMemo(
+    () => filteredReviews.filter((r) => r.status === "pending"),
+    [filteredReviews]
+  );
+
+  const handleToggle = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
+  function handleSelectAllPending() {
+    setSelectedIds(new Set(pendingReviews.map((r) => r.id)));
+  }
+
+  function handleExitSelectionMode() {
+    setSelectionMode(false);
+    setSelectedIds(new Set());
+  }
+
+  function handleBulkApprove() {
+    // Placeholder: bulk approve logic would be wired by frontend developer
+    handleExitSelectionMode();
+  }
+
+  function handleBulkReject() {
+    // Placeholder: bulk reject logic would be wired by frontend developer
+    handleExitSelectionMode();
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -72,6 +111,16 @@ export function ReviewPage() {
         </Tabs>
 
         <div className="flex items-center gap-3">
+          {!selectionMode && pendingReviews.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectionMode(true)}
+            >
+              <CheckSquare className="size-4" />
+              Select
+            </Button>
+          )}
           <Select
             value={sortOrder}
             onValueChange={(value) => setSortOrder(value as SortOrder)}
@@ -90,6 +139,47 @@ export function ReviewPage() {
         </div>
       </div>
 
+      {/* Bulk action toolbar */}
+      {selectionMode && (
+        <div className="flex items-center gap-3 rounded-lg border bg-muted/50 p-3">
+          <span className="text-sm font-medium">
+            {selectedIds.size} selected
+          </span>
+          <span className="text-sm text-muted-foreground" lang="ko">
+            {selectedIds.size}개 선택됨
+          </span>
+          <Button variant="outline" size="sm" onClick={handleSelectAllPending}>
+            Select All Pending
+          </Button>
+          <div className="ml-auto flex items-center gap-2">
+            <Button
+              size="sm"
+              onClick={handleBulkApprove}
+              disabled={selectedIds.size === 0}
+            >
+              <CheckCheck className="size-4" />
+              Approve Selected
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleBulkReject}
+              disabled={selectedIds.size === 0}
+            >
+              <X className="size-4" />
+              Reject Selected
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleExitSelectionMode}
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
+
       <p className="text-sm text-muted-foreground">
         {filteredReviews.length} items
       </p>
@@ -97,7 +187,13 @@ export function ReviewPage() {
       {filteredReviews.length > 0 ? (
         <div className="space-y-3">
           {filteredReviews.map((review) => (
-            <ReviewCard key={review.id} review={review} />
+            <ReviewCard
+              key={review.id}
+              review={review}
+              selectable={selectionMode}
+              selected={selectedIds.has(review.id)}
+              onToggle={handleToggle}
+            />
           ))}
         </div>
       ) : (

@@ -119,7 +119,7 @@ export function StepSettings() {
           Style profile
         </label>
         <p className="text-xs text-muted-foreground">
-          Apply a style profile to maintain a consistent voice
+          Apply a style profile to maintain a consistent content structure
         </p>
         <Select
           value={styleProfileId || "none"}

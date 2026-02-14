@@ -12,6 +12,8 @@ import {
   Loader2,
   ExternalLink,
   Save,
+  Sparkles,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -35,6 +37,8 @@ export function StyleNewPage() {
   const [activeTab, setActiveTab] = useState<TabValue>("url");
   const [inputValue, setInputValue] = useState("");
   const [profileName, setProfileName] = useState("Sarah's Tech Voice");
+  const [previewText, setPreviewText] = useState("");
+  const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -50,6 +54,16 @@ export function StyleNewPage() {
     timerRef.current = setTimeout(() => {
       setPhase("result");
     }, 2000);
+  }
+
+  function handleGeneratePreview() {
+    setIsGeneratingPreview(true);
+    timerRef.current = setTimeout(() => {
+      setPreviewText(
+        "I spent 6 months studying how the best creators repurpose content. Here's the framework nobody talks about.\n\n1/ Most creators think repurposing = copy-paste across platforms. Wrong.\n\nThe compound content framework starts with one deep insight — then fragments it into platform-native pieces.\n\n2/ Here's what that looks like in practice...\n\nYou take a single 'anchor' piece. Could be a podcast, a blog post, a video. Then you extract 5-7 standalone insights.\n\n3/ Each insight becomes its own post — tailored to the platform. Not reformatted. Reimagined.\n\nFollow for more on content strategy."
+      );
+      setIsGeneratingPreview(false);
+    }, 1500);
   }
 
   const isAnalyzeDisabled =
@@ -326,6 +340,66 @@ export function StyleNewPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Style Preview */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Style Preview</CardTitle>
+          <p className="text-sm text-muted-foreground" lang="ko">
+            스타일 미리보기
+          </p>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <p className="text-sm text-muted-foreground">
+            Generate a sample paragraph to validate the extracted style before
+            saving.
+          </p>
+          <p className="text-xs text-muted-foreground" lang="ko">
+            저장하기 전에 추출된 스타일을 검증할 샘플 문단을 생성하세요.
+          </p>
+          <div className="rounded-md border bg-muted/50 p-4 min-h-[80px]">
+            {previewText ? (
+              <p className="text-sm leading-relaxed whitespace-pre-line">
+                {previewText}
+              </p>
+            ) : (
+              <p className="text-sm text-muted-foreground italic">
+                Click &quot;Generate Preview&quot; to see a sample output in
+                this style.
+              </p>
+            )}
+          </div>
+          <div>
+            {previewText ? (
+              <Button
+                variant="outline"
+                onClick={handleGeneratePreview}
+                disabled={isGeneratingPreview}
+              >
+                {isGeneratingPreview ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  <RefreshCw />
+                )}
+                Regenerate Preview
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                onClick={handleGeneratePreview}
+                disabled={isGeneratingPreview}
+              >
+                {isGeneratingPreview ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  <Sparkles />
+                )}
+                Generate Preview
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Bottom save */}
       <div className="flex justify-end">

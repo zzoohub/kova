@@ -81,8 +81,8 @@ export function StylesPage() {
           icon={Palette}
           title="No style profiles yet"
           titleKo="아직 스타일 프로필이 없습니다"
-          description="Style profiles capture how content sounds — the tone, rhythm, hooks, and structure. Paste a URL to content you admire, and Kova will extract the style automatically."
-          descriptionKo="스타일 프로필은 콘텐츠의 톤, 리듬, 훅, 구조 등 사운드를 캡처합니다. 좋아하는 콘텐츠의 URL을 붙여넣으면 Kova가 자동으로 스타일을 추출합니다."
+          description="Style profiles capture how content is composed — the structure, pacing, hooks, and formatting patterns. Paste a URL to content you admire, and Kova will extract the composition style automatically."
+          descriptionKo="스타일 프로필은 콘텐츠의 구성 방식(구조, 페이싱, 훅, 포맷 패턴)을 캡처합니다. 좋아하는 콘텐츠의 URL을 붙여넣으면 Kova가 자동으로 구성 스타일을 추출합니다."
           action={
             <Button asChild>
               <Link href={ROUTES.STYLE_NEW}>Create Your First Style</Link>

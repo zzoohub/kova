@@ -7,6 +7,7 @@ import {
   Film,
   ExternalLink,
   Download,
+  BarChart3,
 } from "lucide-react";
 import {
   Card,
@@ -43,6 +44,15 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   draft: STATUS_DRAFT,
   scheduled: { label: "Scheduled", className: "text-info" },
 };
+
+function isSafeUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "https:" || parsed.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
 
 function getFormatKey(format: string): string {
   const lower = format.toLowerCase();
@@ -110,6 +120,14 @@ export function ContentCard({ item }: ContentCardProps) {
           <Download className="size-3" />
           Export
         </Button>
+        {item.status === "published" && item.analyticsUrl && isSafeUrl(item.analyticsUrl) && (
+          <Button variant="outline" size="xs" asChild>
+            <a href={item.analyticsUrl} target="_blank" rel="noopener noreferrer">
+              <BarChart3 className="size-3" />
+              Analytics
+            </a>
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );

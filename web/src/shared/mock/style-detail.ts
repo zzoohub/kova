@@ -12,40 +12,43 @@ export const mockStyleDetail = {
         "Personal story + bold contrarian claim: 'I did X. Here's what nobody tells you.'",
     },
     {
-      label: "Tone",
-      value:
-        "Casual authority — conversational but confident. Uses 'you' frequently. Avoids jargon.",
-    },
-    {
-      label: "Rhythm",
-      value:
-        "Short. Punchy. Then a longer sentence for context. Average sentence: 8-12 words.",
-    },
-    {
-      label: "Structure",
+      label: "Content Structure",
       value:
         "8-12 posts per thread. Clear narrative arc. Hook in post 1, insight per post, CTA at end.",
     },
     {
-      label: "Emoji Usage",
-      value: "Strategic: one per post opening, never mid-sentence.",
+      label: "Section Pacing",
+      value:
+        "Short. Punchy. Then a longer sentence for context. Average sentence: 8-12 words.",
     },
     {
-      label: "Engagement Techniques",
+      label: "Transition Technique",
+      value:
+        "Bridges between posts using callbacks and open loops. 'But here's the thing...' pattern.",
+    },
+    {
+      label: "Engagement Placement",
       value: "Cliffhanger at post 3, question at post 7, CTA at end.",
     },
     {
-      label: "Formatting",
+      label: "Formatting & Layout",
       value:
         "Numbered (1/, 2/), line break between ideas, bold for emphasis.",
     },
     {
-      label: "Vocabulary Level",
-      value: "Simple words, no jargon, daily life analogies.",
+      label: "Closing/CTA Pattern",
+      value:
+        "Ends with a direct ask: 'Follow for more', 'Repost if this helped', or a question to spark replies.",
     },
     {
-      label: "Perspective",
-      value: "First person storytelling with direct reader address.",
+      label: "Information Density",
+      value:
+        "One core insight per post. No filler. Each post standalone yet part of the arc.",
+    },
+    {
+      label: "Evidence & Example Pattern",
+      value:
+        "Personal anecdotes first, then data points. Uses 'I tested this' framing over abstract claims.",
     },
     {
       label: "Platform Conventions",

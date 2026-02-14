@@ -10,4 +10,5 @@ export type ContentItem = {
   status: ContentStatus;
   publishedAt: Date | null;
   pipelineName: string;
+  analyticsUrl?: string;
 };
