@@ -25,14 +25,13 @@ export function PipelineNewPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="sm" asChild>
-          <Link href={ROUTES.PIPELINES}>
-            <ArrowLeft />
-            Back
-          </Link>
-        </Button>
-      </div>
+      <Link
+        href={ROUTES.PIPELINES}
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring w-fit"
+      >
+        <ArrowLeft className="size-4" aria-hidden="true" />
+        Pipelines
+      </Link>
 
       <div>
         <h1 className="text-xl font-semibold text-foreground">

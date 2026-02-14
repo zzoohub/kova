@@ -141,17 +141,20 @@ export function ReviewPage() {
 
       {/* Bulk action toolbar */}
       {selectionMode && (
-        <div className="flex items-center gap-3 rounded-lg border bg-muted/50 p-3">
-          <span className="text-sm font-medium">
-            {selectedIds.size} selected
-          </span>
-          <span className="text-sm text-muted-foreground" lang="ko">
-            {selectedIds.size}개 선택됨
-          </span>
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/50 p-3">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">
+              {selectedIds.size} selected
+            </span>
+            <span className="text-sm text-muted-foreground" lang="ko">
+              {selectedIds.size}개 선택됨
+            </span>
+          </div>
           <Button variant="outline" size="sm" onClick={handleSelectAllPending}>
             Select All Pending
+            <span className="sr-only" lang="ko">대기 중인 항목 모두 선택</span>
           </Button>
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex flex-wrap items-center gap-2">
             <Button
               size="sm"
               onClick={handleBulkApprove}
@@ -159,6 +162,7 @@ export function ReviewPage() {
             >
               <CheckCheck className="size-4" />
               Approve Selected
+              <span className="sr-only" lang="ko">선택 항목 승인</span>
             </Button>
             <Button
               variant="outline"
@@ -168,6 +172,7 @@ export function ReviewPage() {
             >
               <X className="size-4" />
               Reject Selected
+              <span className="sr-only" lang="ko">선택 항목 거절</span>
             </Button>
             <Button
               variant="ghost"
@@ -175,6 +180,7 @@ export function ReviewPage() {
               onClick={handleExitSelectionMode}
             >
               Cancel
+              <span className="sr-only" lang="ko">취소</span>
             </Button>
           </div>
         </div>

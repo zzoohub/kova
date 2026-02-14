@@ -1,2132 +1,2007 @@
-# Kova -- UX Strategy & UI Layout Plan
+# Kova UX Strategy
 
-**Comprehensive Design Specification for Implementation**
-
-| | |
-|---|---|
-| **Version** | 1.0 |
-| **Date** | February 2025 |
-| **Status** | Draft |
-| **Type** | UX Strategy & UI Specification |
-| **Audience** | Design, Frontend Engineering, Product |
-| **Dependencies** | Product PRD, MVP PRD, Technical PRD |
+**Version:** 1.0
+**Date:** February 2026
+**Scope:** Complete UX strategy, feature specifications, and page layouts for the Kova content creation platform.
 
 ---
 
 ## Table of Contents
 
-1. [Guiding UX Principles](#1-guiding-ux-principles)
-2. [Information Architecture](#2-information-architecture)
-3. [Navigation & Layout System](#3-navigation--layout-system)
-4. [Design System Foundation](#4-design-system-foundation)
-5. [Core Screen Layouts](#5-core-screen-layouts)
-6. [Interaction Flows](#6-interaction-flows)
-7. [Design Patterns & Components](#7-design-patterns--components)
-8. [Progressive Disclosure Strategy](#8-progressive-disclosure-strategy)
-9. [Mobile Strategy](#9-mobile-strategy)
-10. [Accessibility](#10-accessibility)
+- [Part 1: UX Strategy](#part-1-ux-strategy)
+  - [1. Design Principles](#1-design-principles)
+  - [2. Information Architecture](#2-information-architecture)
+  - [3. Navigation Model](#3-navigation-model)
+  - [4. User Mental Models](#4-user-mental-models)
+  - [5. Progressive Disclosure Strategy](#5-progressive-disclosure-strategy)
+  - [6. Key Interaction Patterns](#6-key-interaction-patterns)
+  - [7. Accessibility Considerations](#7-accessibility-considerations)
+  - [8. i18n Considerations](#8-i18n-considerations)
+- [Part 2: Feature UX Specs](#part-2-feature-ux-specs)
+  - [F1. Dashboard](#f1-dashboard)
+  - [F2. Pipeline Builder](#f2-pipeline-builder)
+  - [F3. Pipeline Execution Dashboard](#f3-pipeline-execution-dashboard)
+  - [F4. Human Review Screen](#f4-human-review-screen)
+  - [F5. Style Library + Style Profile Creator](#f5-style-library--style-profile-creator)
+  - [F6. Brand Library + Brand Editor](#f6-brand-library--brand-editor)
+  - [F7. Content Library](#f7-content-library)
+  - [F8. Trends Dashboard](#f8-trends-dashboard)
+  - [F9. Settings](#f9-settings)
+- [Part 3: Page Layouts](#part-3-page-layouts)
+  - [P1. `/` Dashboard](#p1--dashboard)
+  - [P2. `/pipelines` Pipeline List](#p2-pipelines-pipeline-list)
+  - [P3. `/pipelines/new` Pipeline Builder](#p3-pipelinesnew-pipeline-builder)
+  - [P4. `/pipelines/[id]` Pipeline Detail](#p4-pipelinesid-pipeline-detail)
+  - [P5. `/pipelines/[id]/runs/[runId]` Run Detail](#p5-pipelinesidrunsrunid-run-detail)
+  - [P6. `/review` Review Queue](#p6-review-review-queue)
+  - [P7. `/review/[runId]/[stepId]` Review Detail](#p7-reviewrunidstepid-review-detail)
+  - [P8. `/styles` Style Library](#p8-styles-style-library)
+  - [P9. `/styles/new` Create Style Profile](#p9-stylesnew-create-style-profile)
+  - [P10. `/styles/[id]` Style Detail](#p10-stylesid-style-detail)
+  - [P11. `/brands` Brand Library](#p11-brands-brand-library)
+  - [P12. `/brands/new` Create Brand](#p12-brandsnew-create-brand)
+  - [P13. `/brands/[id]` Brand Detail](#p13-brandsid-brand-detail)
+  - [P14. `/content` Content Library](#p14-content-content-library)
+  - [P15. `/trends` Trends Dashboard](#p15-trends-trends-dashboard)
+  - [P16. `/settings/*` Settings](#p16-settings-settings)
 
 ---
 
-## 1. Guiding UX Principles
+# Part 1: UX Strategy
 
-These five principles govern every design decision. When in doubt, apply them in order.
+## 1. Design Principles
 
-### Principle 1: One Goal Per Screen
+These principles are derived directly from the PRD's core value propositions and user needs. Every design decision must satisfy at least one of these.
 
-Every screen has exactly one primary action. If a user cannot identify what to do within 3 seconds, the screen has failed. Secondary actions exist but never compete visually with the primary action.
+### 1.1 Control Spectrum
 
-**Application:** The Pipeline Builder's primary action is "Run" or "Save." The Style Library's primary action is "Create New Style." The Dashboard's primary action is "Start a new pipeline" (for new users) or "Review pending items" (for active users).
+Users operate on a continuum from full autopilot to granular manual control. The interface must never force a user to one end. Every automated action must be overridable. Every manual action must be automatable.
 
-### Principle 2: Complexity Is Earned, Not Given
+**Implementation rule:** Every screen that triggers an automated process must expose a "configure" affordance. Every manual step must have a "skip and automate" option.
 
-New users see the simplest possible version of every feature. Advanced options reveal themselves as the user demonstrates readiness through usage, not through toggle switches or "Advanced Mode" buttons. The system starts simple and grows with the user.
+### 1.2 Pipeline Primacy
 
-**Application:** A first-time pipeline builder sees 3 templates and a "Quick Start" flow. After 5 successful runs, they see the full step editor. AI model selection is hidden until a user explicitly seeks it out in Settings.
+The pipeline is the central object of the product. All other entities (brands, styles, content, trends) exist to serve pipeline execution. The interface must make pipelines feel like the primary workspace, not a feature buried behind menus.
 
-### Principle 3: Show Progress, Not Process
+**Implementation rule:** The "New Pipeline" action must be reachable in one tap from any screen. Pipeline status must be visible without navigating away from the current task.
 
-Users care about outcomes, not internal mechanics. Show what has been accomplished and what remains -- not how the system is accomplishing it. Pipeline execution shows "Script written" and "Thread ready for review," not "Step 3 of 7: LLMProvider.generate() executing."
+### 1.3 Style and Brand Are Separate Concepts
 
-**Application:** Pipeline run views show content previews as they become available, not a technical log. Error states describe what the user can do, not what went wrong internally.
+The product's key differentiator is the separation of Style (how content is composed and structured) from Brand (who is speaking and how they sound). The UI must reinforce this distinction at every touchpoint. Conflating them in the interface would undermine the product's conceptual model.
 
-### Principle 4: Never Leave the User Stranded
+**Implementation rule:** Style and Brand are never combined into a single configuration panel. They occupy separate sidebar sections, separate library pages, and separate selectors in the pipeline builder.
 
-Every state has a clear next action. Empty states tell the user what to do. Error states offer a path forward. Loading states set expectations. Dead ends do not exist.
+### 1.4 Show, Don't Configure
 
-**Application:** An empty Style Library shows "Create your first style profile -- paste a URL to content you admire." A failed pipeline step shows "This step encountered an issue. Retry with different settings, or skip to continue."
+Users should understand what a style or brand does by seeing its output, not by reading a list of parameters. Previews, sample outputs, and visual indicators replace long configuration forms wherever possible.
 
-### Principle 5: Respect Existing Mental Models
+**Implementation rule:** Every style profile and brand must have a "Generate Preview" action that produces a sample output. Extracted attributes are displayed as readable summaries, not as raw key-value pairs.
 
-Users already understand feeds, cards, folders, and timelines. Kova does not invent new interaction paradigms. Pipelines look like step-by-step forms. Style profiles look like profile cards. Content outputs look like social media previews. The interface feels familiar even on the first visit.
+### 1.5 Progressive Complexity
 
-**Application:** The thread preview looks like an actual X/Twitter thread. The LinkedIn post preview looks like a LinkedIn post. Content is previewed in the format it will be published, not in a generic text editor.
+The interface must be immediately usable by a solo entrepreneur who wants "set it and forget it" and simultaneously powerful enough for an agency managing 10 client accounts. The mechanism is progressive disclosure: simple surfaces with depth underneath.
+
+**Implementation rule:** Default templates, pre-configured pipelines, and one-click actions serve beginners. Expandable config panels, per-step model selection, and custom pipeline building serve power users. No feature requires understanding the full system to use.
 
 ---
 
 ## 2. Information Architecture
 
-### 2.1 Site Map
+### 2.1 IA Map
+
+The information architecture follows a task-oriented structure organized around the content creation lifecycle. Objects are grouped by what the user is doing, not by data type.
 
 ```
 Kova
 |
 +-- Dashboard (/)
-|   Home screen. Activity feed, pending reviews, quick actions.
+|   Home. Aggregated view of what needs attention.
+|   Surfaces: pending reviews, recent runs, trending topics, quick actions.
 |
 +-- Pipelines (/pipelines)
+|   |   Build, configure, and monitor content workflows.
+|   |
 |   +-- Pipeline List (/pipelines)
-|   |   All saved pipelines with run history summary.
-|   +-- Pipeline Builder (/pipelines/new, /pipelines/:id/edit)
-|   |   Create or edit a pipeline configuration.
-|   +-- Pipeline Run View (/pipelines/:id/runs/:runId)
-|       Live execution progress and step outputs.
+|   |   All saved pipelines with status, search, and filters.
+|   |
+|   +-- Pipeline Builder (/pipelines/new)
+|   |   Multi-step form: template > steps > settings > review.
+|   |
+|   +-- Pipeline Detail (/pipelines/[id])
+|   |   View config, run history, edit pipeline.
+|   |
+|   +-- Run Detail (/pipelines/[id]/runs/[runId])
+|       Live step-by-step progress, outputs, errors, fan-out branches.
 |
 +-- Review (/review)
+|   |   Queue of pipeline outputs awaiting human approval.
+|   |
 |   +-- Review Queue (/review)
-|   |   All items awaiting human approval, across all pipelines.
-|   +-- Review Detail (/review/:runId/:stepId)
-|       Single review item with editing, approve/reject.
+|   |   Filterable list of pending items. Supports bulk actions.
+|   |
+|   +-- Review Detail (/review/[runId]/[stepId])
+|       Side-by-side: context panel + editable output. Approve/reject/skip.
 |
 +-- Styles (/styles)
+|   |   Library of extracted content composition patterns.
+|   |
 |   +-- Style Library (/styles)
-|   |   Browse and manage all style profiles.
-|   +-- Style Profile Detail (/styles/:id)
-|   |   View/edit a single profile's attributes.
+|   |   Card grid of saved profiles with key attributes visible.
+|   |
 |   +-- Create Style (/styles/new)
-|       Input reference content, see extracted style.
+|   |   Three-phase flow: input > analyzing > result (with preview).
+|   |
+|   +-- Style Detail (/styles/[id])
+|       View/edit extracted attributes, preview, usage in pipelines.
+|
++-- Brands (/brands)
+|   |   Library of brand identities (voice, tone, vocabulary).
+|   |
+|   +-- Brand Library (/brands)
+|   |   Card grid of saved brands with platform connections visible.
+|   |
+|   +-- Create Brand (/brands/new)
+|   |   Single-page form: identity, vocabulary, connected platforms.
+|   |
+|   +-- Brand Detail (/brands/[id])
+|       Edit form (same layout as create, pre-populated).
 |
 +-- Content (/content)
-|   +-- Content Library (/content)
-|       All generated content across all runs, filterable by format/platform/date.
+|   Published and draft content. Filter by format, platform, status.
+|   Links to platform-native analytics.
 |
 +-- Trends (/trends)
-|   +-- Trend Explorer (/trends)
-|       Browse trending topics in configured niches.
+|   Trending topics ranked by score, filterable by niche and time range.
+|   Each topic has a direct "Create Content" action.
 |
 +-- Settings (/settings)
+    |
     +-- Platforms (/settings/platforms)
-    |   OAuth connections for X, YouTube, Instagram, etc.
-    +-- Brand (/settings/brand)
-    |   Brand name, voice, tone, audience, guidelines.
+    |   Connect/disconnect platform accounts via OAuth.
+    |
     +-- AI Models (/settings/models)
-    |   Select which AI model powers each task.
+    |   Select AI provider per task (writing, transcription, voice, image).
+    |
     +-- Defaults (/settings/defaults)
-        Default pipeline settings, approval preferences, scheduling.
+        Default brand, style, approval mode, output formats, notifications.
 ```
 
-### 2.2 Feature Grouping Logic
+### 2.2 Object Relationships
 
-Features are grouped by user intent, not by technical domain:
+```
+Brand (identity, voice)
+  |
+  +-- has many: Platform Accounts (OAuth connections)
+  +-- used by: Pipeline Runs
 
-| Group | User Intent | Contains |
-|---|---|---|
-| **Dashboard** | "What needs my attention?" | Activity feed, pending reviews, recent runs, quick actions |
-| **Pipelines** | "I want to create or run content" | Builder, templates, run history, live execution |
-| **Review** | "I need to approve or edit something" | Review queue, inline editing, approve/reject |
-| **Styles** | "I want to define how my content is structured" | Style library, profile creation, reference analysis |
-| **Content** | "I want to see what was created" | All generated content, export, republish |
-| **Trends** | "I want to know what's trending" | Trend topics, lifecycle stages, niche signals |
-| **Settings** | "I want to configure my account" | Platforms, brand, AI models, defaults |
+Style Profile (composition patterns)
+  |
+  +-- extracted from: Reference Source (URL, text, file)
+  +-- has many: Style Attributes (hook, structure, pacing, etc.)
+  +-- used by: Pipeline Runs
 
-### 2.3 Navigation Priority
+Pipeline (workflow definition)
+  |
+  +-- has many: Steps (ordered sequence)
+  +-- has one: Template (origin)
+  +-- has many: Pipeline Runs (execution instances)
 
-**Primary navigation** (always visible): Dashboard, Pipelines, Review, Styles, Content
+Pipeline Run (single execution)
+  |
+  +-- uses: Brand + Style Profile
+  +-- has many: Run Steps (with status, progress, output)
+  +-- may have: Fan-out Branches (parallel transforms)
+  +-- may produce: Review Items (at human gates)
 
-**Secondary navigation** (accessible but not prominent): Trends, Settings
+Content Asset (generated output)
+  |
+  +-- produced by: Pipeline Run
+  +-- belongs to: Format (thread, post, script, etc.)
+  +-- deployed to: Platform (X, YouTube, LinkedIn, etc.)
+  +-- has one: Deploy Record (published URL, timestamp)
 
-**Tertiary** (contextual, appears within primary screens): Pipeline Builder sub-steps, Style Profile tabs, Settings sub-pages
-
-### 2.4 Information Density Tiers
-
-| Tier | Screens | Density | Rationale |
-|---|---|---|---|
-| **Scan** | Dashboard, Pipeline List, Review Queue | Low -- cards, summaries, status badges | Users are browsing, deciding what to engage with |
-| **Focus** | Pipeline Run, Review Detail, Style Profile | Medium -- panels, previews, inline actions | Users are working on a specific item |
-| **Configure** | Pipeline Builder, Settings, Create Style | Medium-high -- forms, options, toggles | Users are making decisions about how things work |
+Trend Topic (external signal)
+  |
+  +-- belongs to: Niche
+  +-- has one: Lifecycle stage (emerging, rising, peak, declining)
+  +-- sourced from: Trend Source (Reddit, YouTube, Google Trends, etc.)
+```
 
 ---
 
-## 3. Navigation & Layout System
+## 3. Navigation Model
 
-### 3.1 Global Layout Structure
+### 3.1 Sidebar Structure (Desktop: md and above)
 
-The application uses a **sidebar + main content** layout on desktop and a **bottom tab bar + full-screen content** layout on mobile.
+The sidebar uses a two-tier hierarchy with primary nav (core workflows) and secondary nav (supporting tools). The existing implementation in `Sidebar` (`/web/src/widgets/layout/ui/sidebar.tsx`) follows this structure.
 
-```
-Desktop (1024px+):
-+--------------------------------------------------+
-| Top Bar (48px)                                   |
-| [Logo] .............. [Search] [Notifications] [Avatar] |
-+--------+-----------------------------------------+
-| Side   |                                         |
-| bar    |  Main Content Area                      |
-| (220px)|                                         |
-|        |                                         |
-| [Dash] |                                         |
-| [Pipe] |                                         |
-| [Rev]  |                                         |
-| [Style]|                                         |
-| [Cont] |                                         |
-|        |                                         |
-| ----   |                                         |
-| [Trend]|                                         |
-| [Set]  |                                         |
-+--------+-----------------------------------------+
+**Primary Navigation (top section):**
 
-Mobile (<768px):
-+--------------------------------------------------+
-| Top Bar (48px)                                   |
-| [Back/Menu] [Page Title] [Actions]               |
-+--------------------------------------------------+
-|                                                  |
-|  Full-Screen Content Area                        |
-|                                                  |
-|                                                  |
-+--------------------------------------------------+
-| Bottom Tab Bar (56px)                            |
-| [Dash] [Pipes] [+New] [Review] [More]           |
-+--------------------------------------------------+
-```
+| Order | Label | Label (ko) | Icon | Route | Purpose |
+|-------|-------|------------|------|-------|---------|
+| 1 | Dashboard | 대시보드 | `LayoutDashboard` | `/` | Home: what needs attention |
+| 2 | Pipelines | 파이프라인 | `GitBranch` | `/pipelines` | Build and run workflows |
+| 3 | Review | 리뷰 | `CheckSquare` | `/review` | Approve pending outputs |
+| 4 | Styles | 스타일 | `Palette` | `/styles` | Composition pattern library |
+| 5 | Brands | 브랜드 | `UserCircle` | `/brands` | Voice and identity library |
+| 6 | Content | 콘텐츠 | `FileText` | `/content` | Published content archive |
 
-### 3.2 Sidebar Design (Desktop)
+**Secondary Navigation (below separator):**
 
-**Width:** 220px collapsed to 64px (icon-only). User preference persists.
+| Order | Label | Label (ko) | Icon | Route | Purpose |
+|-------|-------|------------|------|-------|---------|
+| 1 | Trends | 트렌드 | `TrendingUp` | `/trends` | Topic discovery |
+| 2 | Settings | 설정 | `Settings` | `/settings` | Configuration |
+
+**Sidebar behavior:**
+- Collapsible to icon-only rail (existing: `useSidebar` store with `collapsed` state).
+- Collapsed state shows tooltips on hover for each item.
+- "New" button sits above nav items for pipeline creation (one-tap access from anywhere).
+- Active route highlighted with `bg-accent` background and `text-accent-foreground` text color.
+- Logo area at top: full "Kova" wordmark when expanded, "K" badge when collapsed.
+
+### 3.2 Mobile Navigation (below md)
+
+The bottom bar (`MobileBottomBar` at `/web/src/widgets/layout/ui/mobile-bottom-bar.tsx`) shows five slots with the center slot elevated.
+
+| Slot | Label | Icon | Route |
+|------|-------|------|-------|
+| 1 | Dashboard | `LayoutDashboard` | `/` |
+| 2 | Pipelines | `GitBranch` | `/pipelines` |
+| 3 (center, raised) | New | `Plus` | `/pipelines/new` |
+| 4 | Review | `CheckSquare` | `/review` |
+| 5 | More | `MoreHorizontal` | `/settings` |
+
+**Design rationale:** The five most frequent actions occupy the bottom bar. Styles, Brands, Content, and Trends are accessed via the hamburger menu (top-left `PanelLeft` button on `TopBar`) or through the "More" slot leading to a full-screen menu overlay.
+
+### 3.3 Top Bar
+
+The `TopBar` (`/web/src/widgets/layout/ui/top-bar.tsx`) is a fixed header with:
+- **Left:** Mobile hamburger menu + mobile logo
+- **Right:** Search trigger (`SearchTrigger`), theme toggle (`ThemeToggle`), notification bell (`NotificationBell`), user avatar
+
+**Notification bell behavior:** Badge count shows pending review items. Clicking opens a dropdown listing recent notifications (pipeline complete, review needed, daily digest). Each notification links to the relevant page.
+
+### 3.4 Breadcrumb Pattern
+
+Detail pages use a back-link pattern rather than full breadcrumb trails. This is simpler, uses less space, and addresses the most common navigation need (going back one level).
+
+**Pattern:** An `ArrowLeft` icon + parent label, positioned above the page title. Example: "< Pipelines" on the pipeline detail page.
+
+---
+
+## 4. User Mental Models
+
+Understanding how each persona thinks about the product shapes which surfaces they see first and which features they discover later.
+
+### 4.1 Content Creator (Sarah)
+
+**Mental model:** "I have ideas. I want them published everywhere without spending hours on formatting."
+
+**Primary workflow:** Dashboard > Quick Run (topic) > Monitor > Review > Published.
+
+**Key surfaces:** Dashboard (what happened today), Pipeline runs (is it done yet), Review (approve and move on).
+
+**What they ignore initially:** Style Library (uses defaults), Settings (uses defaults), Trends (has their own ideas).
+
+**Progressive path:** After initial runs, they discover Style extraction ("Why does this content look different from my usual posts?") and begin building a style library. They graduate from templates to custom pipelines after 5-10 runs.
+
+### 4.2 Marketing Team (Marcus)
+
+**Mental model:** "I manage multiple client identities. Each client has different platforms, different voices, different approval flows."
+
+**Primary workflow:** Switch brand > Select pipeline > Paste source > Review at gates > Approve per client.
+
+**Key surfaces:** Brand Library (switching between clients), Pipeline Detail (per-client templates), Review Queue (bulk approval across clients).
+
+**What they need early:** Multiple brands, human gates at key checkpoints, per-platform approval settings.
+
+**Progressive path:** They build client-specific pipeline templates and style profiles. They use scheduled pipelines for high-volume clients.
+
+### 4.3 Agency (Priya)
+
+**Mental model:** "I want to capture what makes successful content work and reuse those patterns."
+
+**Primary workflow:** Find winning content > Extract style > Apply to pipeline > Generate new content using that structure.
+
+**Key surfaces:** Style Library (the core value prop for this persona), Style Creator (extraction flow), Pipeline Builder (applying styles to workflows).
+
+**What they need early:** Style extraction with preview validation, manual attribute editing, clear separation of style vs. brand.
+
+**Progressive path:** They build large style libraries organized by content format and platform. They share styles across team members.
+
+### 4.4 Solo Entrepreneur (Alex)
+
+**Mental model:** "I want to set up once and let it run. Content should appear on my platforms without me thinking about it."
+
+**Primary workflow:** Pick template > Connect platforms > Set schedule > Walk away > Check daily digest.
+
+**Key surfaces:** Pipeline Builder (one-time setup), Dashboard (daily digest), Settings (platform connections).
+
+**What they need early:** Pre-built templates that "just work," simple scheduling, full autopilot mode.
+
+**Progressive path:** They add more platforms, try different templates, and eventually customize pipeline steps. They may never touch the Style Library unless content quality drops.
+
+---
+
+## 5. Progressive Disclosure Strategy
+
+### 5.1 Layer Model
+
+The interface uses three disclosure layers. Each layer is self-contained -- a user can operate entirely within Layer 1 and still get full value.
+
+| Layer | Who | What they see | What is hidden |
+|-------|-----|---------------|----------------|
+| **L1: Templates** | New users, solo entrepreneurs | Pre-built pipeline templates, one-click "Quick Run," default brand/style, auto-selected platforms | Custom step ordering, per-step model selection, manual style extraction, scheduling, approval modes |
+| **L2: Configuration** | Active creators, marketing teams | Pipeline builder with step editing, brand/style selectors, schedule settings, human gates, filter/sort on all lists | Per-step AI model override, custom approval rules, API-level settings |
+| **L3: Power** | Agencies, power users | Per-step model selection, custom pipeline templates, manual attribute editing on styles, per-platform approval, version history | (Nothing hidden -- full access) |
+
+### 5.2 Disclosure Mechanisms
+
+**Templates as starting points:** The Pipeline Builder opens to a template grid (Layer 1). Selecting a template pre-fills steps and settings. Clicking "Customize" or editing any step transitions to Layer 2.
+
+**Collapsible step configs:** Each step in the pipeline builder has a collapsed state showing name and category (Layer 1/2). Expanding reveals per-step configuration: model selection, parameters, etc. (Layer 3).
+
+**"Advanced" sections in settings:** Settings pages show the most common options at the top (default brand, style, approval mode). Advanced options like notification preferences, timezone, and output format defaults appear below, visible but not competing for attention.
+
+**Progressive form fields:** The Brand Editor shows Identity fields first (name, voice, audience). Vocabulary and Platform sections appear below. Users filling out only name and voice get a functional brand.
+
+### 5.3 Disclosure Triggers
+
+| Trigger | Where | Effect |
+|---------|-------|--------|
+| First pipeline run completes | Dashboard | Show "Tip: Create a style profile to make future content more consistent" in the quick-start card |
+| User edits AI output during review | Review Detail | Show "Tip: Adjust your style profile to avoid this edit next time" as inline hint |
+| Third brand created | Brand Library | Show prompt to set a default brand |
+| Pipeline fails | Run Detail | Expand the failed step automatically, show retry/skip options |
+| User hovers a collapsed section | Pipeline Builder | Show a brief description of what this section configures |
+
+---
+
+## 6. Key Interaction Patterns
+
+These patterns repeat across the application. Defining them once ensures consistency and reduces engineering effort.
+
+### 6.1 Library Pattern (Styles, Brands, Content, Pipelines)
+
+Used by: `/styles`, `/brands`, `/content`, `/pipelines`
 
 **Structure:**
-- Top: Kova logo (links to Dashboard)
-- Primary section: Dashboard, Pipelines, Review (with unread badge), Styles, Content
-- Divider line
-- Secondary section: Trends, Settings
-- Bottom: User avatar with dropdown (profile, logout)
+1. `PageHeader` with title, Korean subtitle, and primary "Create New" action button
+2. Filter bar: search input (with `Search` icon prefix), category/type/status `Select` dropdowns, sort `Select`
+3. Card grid: responsive `grid-cols-1 md:grid-cols-2 xl:grid-cols-3` with entity cards
+4. Empty state: `EmptyState` component when no items exist at all
+5. No-results state: simplified empty view when filters produce zero results
 
-**Active state:** Background highlight + left border accent. Icon and label both change color.
+**Interactions:**
+- Search is instant (client-side filter over loaded data)
+- Filters compose (AND logic): search + status + type
+- Cards are clickable links to detail pages
+- Card actions (edit, duplicate, delete) accessible via overflow menu (`DropdownMenu`)
 
-**Collapsed state:** Icons only. Hover reveals tooltip with label. Expanding is a smooth 200ms slide animation.
+### 6.2 Detail Page Pattern (Pipeline Detail, Style Detail, Brand Detail)
 
-### 3.3 Top Bar Design
+Used by: `/pipelines/[id]`, `/styles/[id]`, `/brands/[id]`
 
-**Height:** 48px fixed.
+**Structure:**
+1. Back-link to parent library (ArrowLeft + parent name)
+2. Page title with status badge and action buttons (Edit, Run, Delete, Duplicate)
+3. Summary card with key metadata in a responsive grid
+4. Detail sections below (steps, attributes, usage history)
 
-**Contents:**
-- Left: Logo (desktop) or back arrow / hamburger (mobile)
-- Center: Page title (mobile only)
-- Right: Global search (desktop), Notification bell with unread count, User avatar
+**Interactions:**
+- Back-link navigates to parent library preserving filter state (via URL params using `nuqs`)
+- Destructive actions (Delete) require confirmation dialog
+- Edit actions either navigate to an edit page (brands) or enable inline editing (styles)
 
-**Notifications dropdown:** Lists recent events -- "Pipeline completed," "Content ready for review," "Style profile created." Each links to the relevant screen. Unread items marked with a dot. "Mark all read" action at top.
+### 6.3 Multi-Step Form Pattern (Pipeline Builder, Style Creator)
 
-### 3.4 Breadcrumb Strategy
+Used by: `/pipelines/new`, `/styles/new`
 
-Breadcrumbs appear on all pages deeper than the top-level navigation items. They sit directly below the top bar, above the page content.
+**Structure:**
+1. Back-link to parent library
+2. Step progress indicator (`BuilderProgress` at `/web/src/widgets/pipeline-builder/ui/builder-progress.tsx`)
+3. Current step content area
+4. Bottom navigation: Back + Next/Submit buttons
 
-**Format:** `Pipelines > My Weekly Thread Pipeline > Run #47`
+**Interactions:**
+- Steps are navigable forward and backward
+- Each step validates before allowing forward navigation
+- Form state persists in a Zustand store (e.g., `useBuilderForm`)
+- Final step shows a summary with "Save" and "Save & Run" actions
+- Browser back button navigates to the previous step, not the previous page
 
-**Rules:**
-- Maximum 3 levels displayed. Deeper nesting truncates the middle with "..."
-- Each segment is a clickable link except the current page
-- On mobile, breadcrumbs collapse to a single "Back" arrow that returns to the parent
+### 6.4 Status Timeline Pattern (Pipeline Run)
 
-### 3.5 Quick Actions
+Used by: `/pipelines/[id]/runs/[runId]`
 
-A floating action button (FAB) on the Dashboard provides the three most common starting points:
+**Structure:**
+1. Vertical timeline with icon + connector line
+2. Each step shows: icon (status-colored), name, duration, output preview
+3. Running step shows progress bar (`Progress` component)
+4. Failed step shows error message with retry/skip actions
+5. Fan-out branches shown as indented sub-items under the parent step
 
-1. **New Pipeline** -- opens Pipeline Builder with template selection
-2. **Quick Run** -- opens a minimal dialog: topic + style + "Run" (creates and runs a default pipeline)
-3. **New Style** -- opens the Create Style flow
+**Interactions:**
+- Timeline auto-scrolls to the currently running step (via SSE updates)
+- Completed step output is expandable (click to see full output)
+- Review-waiting steps show a "Review" link that navigates to the review detail page
+- Pause and Cancel buttons in the header when a run is active
 
-On desktop, the FAB is replaced by a prominent "New" button in the top-right of the sidebar, which opens the same three options as a dropdown.
+### 6.5 Review Pattern (Review Detail)
 
-### 3.6 Global Search
+Used by: `/review/[runId]/[stepId]`
 
-Desktop only. Activated by clicking the search icon or pressing `/` (keyboard shortcut).
+**Structure:**
+1. Two-column layout: Context panel (35% width) + Output panel (65% width)
+2. Context panel: source info, style profile summary, previous step output (collapsible)
+3. Output panel: editable content organized by format (e.g., posts in a thread, each with character count)
+4. Sticky bottom action bar: Reject (left) + Skip (center) + Approve (right)
 
-**Searches across:** Pipeline names, style profile names, content titles, trend topics.
+**Interactions:**
+- Output text is directly editable via `Textarea` components
+- Character counts update live and show red when over platform limits
+- Approve: submits the (potentially edited) content and advances the pipeline
+- Reject: opens a feedback textarea, then retries the step with feedback
+- Skip: marks this step as skipped, continues pipeline without this output
+- Mobile: columns stack vertically, context panel becomes a collapsible section
 
-**Results grouped by type:** Pipelines, Styles, Content, Trends. Each result shows a brief excerpt and links to the relevant detail page.
+### 6.6 Card Pattern (Entity Cards)
 
-**Empty state:** "No results found. Try a different search term."
+Used by: `PipelineCard`, `StyleCard`, `BrandCard`, `ReviewCard`, `ContentCard`
 
----
+**Structure:**
+- Shadcn `Card` with `CardHeader` (title + action/badge), `CardContent` (details), `CardFooter` (actions)
+- Fixed height within grid (use `h-full` on card, `line-clamp-2` on descriptions)
+- Hover: subtle shadow elevation (`hover:shadow-md`)
+- Focus: visible ring (`focus-visible:outline-2 focus-visible:outline-ring`)
 
-## 4. Design System Foundation
-
-### 4.1 Grid System
-
-**Base unit:** 4px. All spacing, sizing, and positioning use multiples of 4px.
-
-**Layout grid:**
-- Desktop (1024px+): 12-column grid, 24px gutters, 32px margins
-- Tablet (768px-1023px): 8-column grid, 20px gutters, 24px margins
-- Mobile (<768px): 4-column grid, 16px gutters, 16px margins
-
-**Content max-width:** 1200px (centered within the main content area beyond the sidebar).
-
-### 4.2 Spacing Scale
-
-| Token | Value | Usage |
-|---|---|---|
-| `space-xs` | 4px | Inline spacing between icon and label |
-| `space-sm` | 8px | Spacing within compact components (badge padding) |
-| `space-md` | 12px | Default intra-component spacing (form field gap) |
-| `space-lg` | 16px | Spacing between related components |
-| `space-xl` | 24px | Spacing between sections |
-| `space-2xl` | 32px | Page section dividers |
-| `space-3xl` | 48px | Major page sections |
-
-### 4.3 Typography Scale
-
-Based on a 1.25 ratio scale from a 16px base. Font family: Inter (body), JetBrains Mono (code/data).
-
-| Token | Size | Weight | Line Height | Usage |
-|---|---|---|---|---|
-| `text-xs` | 12px | 400 | 16px | Captions, timestamps, tertiary labels |
-| `text-sm` | 14px | 400 | 20px | Secondary text, descriptions, form hints |
-| `text-base` | 16px | 400 | 24px | Body text, form inputs, list items |
-| `text-lg` | 20px | 500 | 28px | Card titles, section headers |
-| `text-xl` | 24px | 600 | 32px | Page titles |
-| `text-2xl` | 30px | 700 | 36px | Dashboard headline numbers |
-| `text-3xl` | 36px | 700 | 40px | Hero/onboarding headings |
-
-### 4.4 Color System
-
-**Neutral palette** (light mode baseline, dark mode inverts):
-
-| Token | Light | Dark | Usage |
-|---|---|---|---|
-| `bg-primary` | white (#FFFFFF) | gray-950 (#0A0A0F) | Page background |
-| `bg-secondary` | gray-50 (#F8F9FA) | gray-900 (#111118) | Card backgrounds, sidebar |
-| `bg-tertiary` | gray-100 (#F1F3F5) | gray-800 (#1C1C27) | Hover states, wells |
-| `text-primary` | gray-900 (#111118) | gray-50 (#F8F9FA) | Headings, primary text |
-| `text-secondary` | gray-600 (#5C5F66) | gray-400 (#9CA3AF) | Descriptions, secondary text |
-| `text-tertiary` | gray-400 (#9CA3AF) | gray-600 (#5C5F66) | Captions, placeholders |
-| `border-default` | gray-200 (#E5E7EB) | gray-700 (#2D2D3A) | Card borders, dividers |
-| `border-subtle` | gray-100 (#F1F3F5) | gray-800 (#1C1C27) | Subtle separators |
-
-**Brand color:**
-
-| Token | Value | Usage |
-|---|---|---|
-| `brand-500` | #6366F1 (Indigo) | Primary buttons, active states, links |
-| `brand-600` | #4F46E5 | Button hover |
-| `brand-700` | #4338CA | Button active/pressed |
-| `brand-100` | #E0E7FF | Brand tinted backgrounds |
-| `brand-50` | #EEF2FF | Lightest brand tint |
-
-**Semantic colors:**
-
-| Token | Value | Usage |
-|---|---|---|
-| `success` | #10B981 (Emerald-500) | Completed states, approvals, connected |
-| `warning` | #F59E0B (Amber-500) | Waiting states, caution |
-| `error` | #EF4444 (Red-500) | Failed states, rejections, destructive actions |
-| `info` | #3B82F6 (Blue-500) | Informational badges, tips |
-
-**Platform colors** (used only for platform icons and connection badges):
-
-| Platform | Color | Usage |
-|---|---|---|
-| X / Twitter | #000000 | Platform icon, connection status |
-| YouTube | #FF0000 | Platform icon, connection status |
-| Instagram | #E4405F | Platform icon, connection status |
-| LinkedIn | #0A66C2 | Platform icon, connection status |
-| Reddit | #FF4500 | Platform icon, connection status |
-| WordPress | #21759B | Platform icon, connection status |
-
-### 4.5 Border Radius
-
-| Token | Value | Usage |
-|---|---|---|
-| `radius-sm` | 4px | Badges, small elements |
-| `radius-md` | 8px | Cards, inputs, buttons |
-| `radius-lg` | 12px | Modals, popovers |
-| `radius-xl` | 16px | Large cards, panels |
-| `radius-full` | 9999px | Avatars, pills, circular buttons |
-
-### 4.6 Shadows
-
-| Token | Value | Usage |
-|---|---|---|
-| `shadow-sm` | 0 1px 2px rgba(0,0,0,0.05) | Subtle lift (cards at rest) |
-| `shadow-md` | 0 4px 6px rgba(0,0,0,0.07) | Elevated elements (dropdowns) |
-| `shadow-lg` | 0 10px 15px rgba(0,0,0,0.1) | Floating elements (modals, popovers) |
-| `shadow-xl` | 0 20px 25px rgba(0,0,0,0.12) | Overlay panels |
-
-### 4.7 Iconography
-
-Use Lucide icons (open-source, consistent, pairs well with shadcn-ui). All icons are 20px by default, 16px in compact contexts, 24px for emphasis.
-
-**Icon usage rules:**
-- Navigation items: icon + label (expanded sidebar), icon only (collapsed sidebar)
-- Buttons: icon-only for familiar actions (close, edit, delete), icon + label for less obvious actions
-- Status indicators: icon + text label for accessibility; never color alone
-
-### 4.8 Motion and Animation
-
-**Principles:**
-- Motion communicates, never decorates. Every animation answers "What changed?"
-- Duration: 150ms for micro-interactions (hover, toggle), 200ms for reveals (dropdown, expand), 300ms for transitions (page, modal).
-- Easing: `ease-out` for entrances, `ease-in` for exits, `ease-in-out` for position changes.
-- Reduced motion: respect `prefers-reduced-motion`. Replace animations with instant state changes.
-
-**Standard transitions:**
-- Sidebar expand/collapse: 200ms width slide
-- Modal open: 200ms fade + scale from 95%
-- Dropdown: 150ms fade + 4px slide down
-- Page transition: 150ms fade (content area only, navigation stays)
-- Card hover lift: 150ms translateY(-2px) + shadow-md
-- Notification toast: 300ms slide in from right, auto-dismiss after 5s
+**Content density rules:**
+- Title: 1 line, font-medium text-base
+- Description: max 2 lines via `line-clamp-2`
+- Metadata: small text (`text-xs`), muted color, icon-prefixed
+- Actions: 1-2 buttons in footer, compact sizes (`size="sm"` or `size="xs"`)
 
 ---
 
-## 5. Core Screen Layouts
+## 7. Accessibility Considerations
 
-### 5.1 Dashboard / Home
+### 7.1 WCAG 2.1 AA Compliance
 
-**URL:** `/`
+All interfaces must meet WCAG 2.1 AA. This is implemented through the following specific requirements:
 
-**User goal:** Understand current state at a glance and decide what to do next.
+**Color and contrast:**
+- Text contrast: minimum 4.5:1 against background (enforced by the existing Tailwind color tokens: `foreground`, `muted-foreground`, `primary`, etc.)
+- UI component contrast: minimum 3:1 for borders, icons, and interactive elements
+- Color is never the sole indicator of status. Every status uses icon + label + color (see `StatusIndicator`, `RunStatusBadge`, `LifecycleBadge`)
 
-**Layout:**
+**Interactive targets:**
+- Minimum 44x44px touch targets on all interactive elements (existing: sidebar nav items, bottom bar tabs, card action buttons)
+- 48x48px preferred for primary actions (existing: "New Pipeline" button, "Approve" button)
+- Adequate spacing between adjacent interactive elements (minimum 8px gap)
 
-```
-+----------------------------------------------------------+
-| Greeting Section (full width)                            |
-| "Good morning, Sarah" + quick summary stats              |
-+----------------------------------------------------------+
-|                                                          |
-| +-- Pending Reviews (left 60%) --+  +-- Quick Start --+ |
-| | Card: "Thread draft ready"     |  | [New Pipeline]  | |
-| | Card: "LinkedIn post waiting"  |  | [Quick Run]     | |
-| | Card: "Script needs approval"  |  | [New Style]     | |
-| | [View all N items]             |  |                 | |
-| +--------------------------------+  +-----------------+ |
-|                                                          |
-| +-- Recent Pipeline Runs (full width) ----------------+ |
-| | Run card | Run card | Run card | Run card           | |
-| | [View all]                                          | |
-| +-----------------------------------------------------+ |
-|                                                          |
-| +-- Trending in Your Niche (full width) --------------+ |
-| | Topic pill | Topic pill | Topic pill | [Explore]    | |
-| +-----------------------------------------------------+ |
-+----------------------------------------------------------+
-```
+**Keyboard navigation:**
+- All interactive elements are focusable via Tab key
+- Focus order follows visual order (left-to-right, top-to-bottom)
+- `focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring` applied consistently
+- `Escape` closes modals, dropdowns, and popovers
+- `Enter` or `Space` activates buttons and links
+- Arrow keys navigate within radio groups, tab lists, and dropdown menus
+- Skip-to-content link at the top of the page (add to `AppLayout`)
 
-**Sections (top to bottom):**
+**Screen reader support:**
+- Semantic HTML: `<nav>`, `<main>`, `<section>`, `<article>`, `<header>`, `<footer>` used appropriately
+- `aria-label` on navigation regions (existing: `aria-label="Main navigation"`, `aria-label="Mobile navigation"`)
+- `aria-current="page"` on active nav items (existing in `MobileBottomBar`)
+- `role="navigation"` on nav elements (existing)
+- `aria-hidden="true"` on decorative icons (existing on all Lucide icons)
+- `sr-only` text for icon-only buttons (existing: `<span className="sr-only">Actions</span>`)
+- `aria-pressed` on toggle buttons (existing in template selection)
+- Live regions (`aria-live="polite"`) for dynamic content updates: pipeline step completion, progress changes, notification counts
+- `role="alert"` on error banners (pipeline failures, validation errors)
 
-1. **Greeting bar** -- Personalized greeting with time-of-day awareness. Displays 3 summary stats: "N items to review," "N pipelines ran today," "N pieces published this week." Each stat is clickable, linking to the relevant list view.
+**Motion and animation:**
+- Respect `prefers-reduced-motion` media query
+- Loading spinners (`animate-spin`) should use `motion-safe:animate-spin`
+- Sidebar collapse transition (`duration-200`) should be disabled under reduced-motion
 
-2. **Pending Reviews** -- The most urgent section. Shows cards for each pipeline output awaiting human approval. Each card shows: format icon (thread, post, video), content preview (first 100 characters), pipeline name, time waiting. Clicking opens the Review Detail screen. If no pending reviews, this section shows a calm "All caught up" state with a subtle checkmark.
+### 7.2 Component-Specific Accessibility
 
-3. **Quick Start** -- Three large buttons stacked vertically (on the right side of pending reviews, or full width on mobile). "New Pipeline" (brand color, primary), "Quick Run" (secondary), "New Style" (secondary). Each opens its respective flow.
-
-4. **Recent Pipeline Runs** -- Horizontal scrollable row of run cards. Each card shows: pipeline name, status badge (running/completed/failed), format icons for outputs, timestamp. Clicking opens the Pipeline Run View.
-
-5. **Trending Topics** -- A row of topic pills from Trend Intelligence. Each pill shows the topic name and a lifecycle badge (emerging, rising, peak). Clicking a pill opens a "Quick Run" dialog pre-filled with that topic. "Explore" link opens the full Trend Explorer.
-
-**Empty state (new user, no activity):**
-
-The entire dashboard simplifies to a single onboarding card:
-```
-+----------------------------------------------------------+
-| Welcome to Kova                                          |
-|                                                          |
-| Create content that sounds like you,                     |
-| published everywhere, automatically.                     |
-|                                                          |
-| Step 1: Create your voice     [ Start ]                  |
-|   Paste a link to content you admire.                    |
-|   Kova learns how it sounds.                             |
-|                                                          |
-| Step 2: Build a pipeline      [ Browse Templates ]       |
-|   Choose a workflow template.                            |
-|   Customize the steps.                                   |
-|                                                          |
-| Step 3: Run it                [ Skip to Quick Run ]      |
-|   Type a topic and go.                                   |
-+----------------------------------------------------------+
-```
-
-**Loading state:** Skeleton cards in each section -- gray rectangles pulsing where content will appear. Stats show "--" placeholders.
-
-**Error state:** If API fails, show a subtle inline error within the affected section (not a full-page error). "Could not load recent runs. [Retry]" Other sections remain functional.
-
-**Mobile:** Sections stack vertically. Pending Reviews becomes a compact list (no grid). Quick Start moves to a floating action button. Trending Topics becomes a horizontally scrollable chip row.
+| Component | Requirements |
+|-----------|-------------|
+| `Sidebar` | `role="navigation"`, `aria-label`, collapse/expand toggle has `aria-label` |
+| `MobileBottomBar` | `role="navigation"`, `aria-label`, `aria-current` on active tab |
+| `SearchTrigger` | Opens command palette, keyboard shortcut (`Cmd+K`), `role="searchbox"` |
+| `NotificationBell` | `aria-label` includes count ("3 notifications"), dropdown has `role="menu"` |
+| Pipeline step list | Ordered list `<ol>`, move buttons have `aria-label` ("Move Script Writer up") |
+| Review card checkboxes | `aria-label` per checkbox ("Select Script Writer step"), bulk actions announce count |
+| Style attribute editing | Textarea has associated label, Save/Cancel are keyboard-accessible |
+| Status badges | Include text label alongside icon, not icon-only |
+| Progress bars | `role="progressbar"`, `aria-valuenow`, `aria-valuemin="0"`, `aria-valuemax="100"` |
+| Dialogs | Focus trap, `Escape` to close, focus returns to trigger on close |
 
 ---
 
-### 5.2 Pipeline Builder
+## 8. i18n Considerations
 
-**URL:** `/pipelines/new` (create), `/pipelines/:id/edit` (edit)
+### 8.1 Bilingual Display Pattern
 
-**User goal:** Configure a content workflow and either run it immediately or save it for later use.
+As specified in `CLAUDE.md`, all pages support English and Korean. The existing codebase follows a consistent bilingual pattern:
 
-**Layout:**
+**Page-level titles:** `PageHeader` takes `title` (English) and `titleKo` (Korean). Korean subtitle is displayed below the English title in `text-sm text-muted-foreground` with `lang="ko"`.
 
-```
-+----------------------------------------------------------+
-| Header                                                   |
-| [Back] Pipeline Builder          [Save Draft] [Run]      |
-+----------------------------------------------------------+
-| Progress Indicator                                       |
-| (1) Basics --- (2) Steps --- (3) Settings --- (4) Review |
-+----------------------------------------------------------+
-|                                                          |
-|  Current Step Content (single-column, max-width 680px)   |
-|                                                          |
-|  [Form fields for current step]                          |
-|                                                          |
-|                                                          |
-|                            [Back]  [Continue]            |
-+----------------------------------------------------------+
-```
+**Section headers:** `SectionHeader` takes `title` (English) and `titleKo` (Korean). Same display pattern.
 
-The builder is a **multi-step form**, not a single-page configuration. This reduces cognitive load by presenting one category of decisions at a time.
+**Empty states:** `EmptyState` takes both English and Korean versions of title and description.
 
-**Step 1: Basics**
+**Form labels:** Brand form uses `FormField` with `label` + `labelKo`. Korean appears inline as `/ labelKo` in `text-xs text-muted-foreground`.
 
-Purpose: Name the pipeline, choose a starting point.
+**Settings toggles:** Each toggle/radio shows `label` + `labelKo` inline.
 
-Fields:
-- **Pipeline name** -- text input, placeholder "My content pipeline," auto-generated if left empty
-- **Template** -- card grid showing 4-6 templates. Each template card shows: icon, name, description (1 line), list of steps included. Templates:
-  - "Topic to Everything" -- Idea > Research > Script > Transform (all formats) > Deploy
-  - "URL to Everything" -- Reference analysis > Script > Transform > Deploy
-  - "YouTube to Clips + Social" -- Transcribe > Video Clip > Transform > Deploy
-  - "Blog to Social" -- Analyze source > Transform (thread + post) > Deploy
-  - "Trend-Powered Daily" -- Trend analysis > Idea > Script > Transform > Deploy
-  - "Blank" -- Start with no steps
-- **Source type** (shown after template selection) -- radio group: "Topic/Idea," "URL," "Uploaded file," "Pasted text"
-- **Source input** -- context-dependent field: text input for topic, URL input for URL, file dropzone for upload, textarea for pasted text
+### 8.2 Text Direction and Spacing
 
-Selecting a template pre-fills Steps 2 and 3 with sensible defaults. User can modify.
+- Korean text does not require RTL support
+- Korean characters are wider than Latin characters; ensure `min-w-0` and `truncate` on containers to prevent layout overflow
+- Line heights: Korean text may need slightly more line-height than English; use `leading-relaxed` for Korean body text
+- Character counts (e.g., tweet character limits) apply to the output language, not the interface language
 
-**Step 2: Steps**
+### 8.3 Content That Must Not Be Translated
 
-Purpose: Configure which pipeline steps run and in what order.
+- Pipeline step names (these are product-specific terms: "Idea Generator," "Script Writer")
+- Style attribute labels ("Hook Pattern," "Content Structure")
+- Platform names ("X / Twitter," "YouTube," "LinkedIn")
+- AI model names ("Claude Sonnet," "GPT-4o")
+- Technical metadata (URLs, timestamps, IDs)
 
-Layout: An ordered list of step cards. Each card shows:
-- Step icon + name (e.g., "Idea Generator," "Script Writer")
-- Brief description of what it does
-- Expand/collapse toggle for step-specific settings
-- Drag handle (post-MVP; for MVP, up/down arrow buttons)
-- Remove button (X)
+### 8.4 Implementation Notes
 
-Below the list:
-- "Add Step" button opens a dropdown of available steps grouped by category:
-  - **Generate:** Idea Generator, Research Agent, Script Writer
-  - **Refine:** Content Editor, SEO Optimizer, Hashtag Generator, Visual Agent
-  - **Transform:** Multi-Format Transform (then select which formats)
-  - **Review:** Human Review Gate
-  - **Publish:** Deploy to Platforms
-
-When expanded, each step shows its configuration:
-- **Idea Generator:** Number of ideas (1-5), creativity level (slider: conservative to experimental)
-- **Script Writer:** Target length (short/medium/long), structure preference (freeform, numbered, sectioned)
-- **Content Editor:** Edit intensity (light/moderate/thorough), focus (clarity, engagement, SEO, all)
-- **Multi-Format Transform:** Checkboxes for each format (Thread, Post, Newsletter, Video Script, Carousel, Podcast, Reddit, Short Video, Video Shorts). Selecting multiple creates fan-out branches.
-- **Human Review Gate:** Position label ("Review before publishing," "Review after writing")
-- **Deploy:** Platform checkboxes (only connected platforms shown; unconnected platforms show "Connect in Settings" link)
-
-**Default for templates:** Steps are pre-configured. User sees them listed and can expand to modify, remove, or reorder.
-
-**Step 3: Settings**
-
-Purpose: Configure how the pipeline behaves.
-
-Fields:
-- **Style Profile** -- dropdown of saved styles + "None" + "Create new" link. Shows a mini-preview of the selected profile (3 key attributes: hook pattern, content structure, section pacing).
-- **Trigger** -- radio group:
-  - "Run once" (default) -- execute immediately or on demand
-  - "Schedule" -- reveals cron configuration:
-    - Frequency: Daily, Weekdays, Weekly, Custom
-    - Time picker (with timezone)
-    - Start date (defaults to today)
-- **Approval mode** (visible when schedule is selected) -- radio group:
-  - "Full autopilot" -- no human review
-  - "Review before publish" -- queue for review, then deploy
-  - "Per-platform" -- reveals per-platform toggle (auto/review)
-- **AI Model** (collapsed by default, "Advanced" section) -- dropdown per task type. Defaults shown. Only appears if user has expanded it before or has more than 10 pipeline runs.
-
-**Step 4: Review**
-
-Purpose: Confirm everything before running.
-
-Layout: A summary card showing:
-- Pipeline name
-- Source type and input preview
-- Steps listed in order (with brief config summary per step)
-- Style profile name (or "None")
-- Trigger type (once or scheduled with cron)
-- Approval mode
-- Target platforms
-
-Two primary actions: **"Save & Run"** (brand color, prominent) and **"Save as Template"** (secondary). If scheduled, primary button reads **"Save & Activate Schedule."**
-
-**Empty state:** Only relevant for Step 2 when using the "Blank" template. Shows: "Your pipeline has no steps yet. Add your first step to get started. [Add Step]"
-
-**Loading state:** Template cards show skeleton. After template selection, step list pre-fills with a brief loading shimmer.
-
-**Error state:** Inline validation on each step. If a required field is missing, the progress indicator marks that step with a warning dot. Attempting to proceed shows the specific field error inline below the field.
-
-**Mobile:** The multi-step form works naturally on mobile. Each step is full-screen. Progress indicator becomes a compact "Step 2 of 4" label. Cards stack vertically. Step configuration uses full-width selectors.
+- All user-facing strings exist as inline props (not an i18n key system). This matches the current codebase pattern and avoids introducing an i18n framework for two languages.
+- If a third language is added, migrate to `next-intl` or `next-i18next` and extract strings to JSON files.
+- Date formatting uses `toLocaleDateString("en-US", ...)` for English and should add Korean formatting when full locale switching is implemented.
 
 ---
 
-### 5.3 Pipeline Run View
+# Part 2: Feature UX Specs
 
-**URL:** `/pipelines/:id/runs/:runId`
+## F1. Dashboard
 
-**User goal:** Monitor a running pipeline's progress and access outputs as they become available.
+### Purpose
 
-**Layout:**
+Surface the most important information and actions so the user can immediately understand what needs attention and take the next step. The dashboard answers three questions: "What needs my review?", "What is running?", and "What topics should I create content about?"
 
-```
-+----------------------------------------------------------+
-| Header                                                   |
-| [Back] Run: "My Weekly Thread"       [Pause] [Cancel]    |
-| Status: Running -- Step 3 of 6                           |
-+----------------------------------------------------------+
-|                                                          |
-| Progress Timeline (vertical, left-aligned)               |
-|                                                          |
-| [done] Idea Generation ............. 12s                 |
-|        "Why most developers waste time on..."            |
-|                                                          |
-| [done] Research ...................  28s                  |
-|        3 key points identified                           |
-|                                                          |
-| [>>>]  Script Writing .............. ~45s remaining      |
-|        ||||||||||||||||||........... 62%                  |
-|                                                          |
-| [wait] Multi-Format Transform                            |
-|        Thread + LinkedIn + Newsletter                    |
-|                                                          |
-| [wait] Human Review                                      |
-|                                                          |
-| [wait] Deploy to X, LinkedIn                             |
-|                                                          |
-+----------------------------------------------------------+
-| Output Preview (appears as steps complete)               |
-| +------------------------------------------------------+ |
-| | Tab: Script | Tab: Thread | Tab: LinkedIn | Tab: ... | |
-| |                                                      | |
-| | [Content preview of selected tab]                    | |
-| |                                                      | |
-| +------------------------------------------------------+ |
-+----------------------------------------------------------+
-```
+### User Stories
 
-**Sections:**
+- As a content creator, I want to see pending reviews as soon as I open the app, so that I can approve content quickly.
+- As a solo entrepreneur, I want to see if my scheduled pipelines ran successfully today, so that I know my content is being published.
+- As a marketing team member, I want quick-start actions, so that I can create a new pipeline or run without navigating through menus.
+- As any user, I want to see trending topics in my niche, so that I can create timely content.
 
-1. **Header bar** -- Pipeline name, overall status badge (pending/running/waiting/completed/failed), current step indicator ("Step 3 of 6"). Actions: Pause (if running), Cancel (always available during execution), Retry (if failed).
+### Key Interactions
 
-2. **Progress timeline** -- Vertical step list, each step showing:
-   - Status icon: checkmark (done), animated spinner (running), clock (waiting), warning triangle (failed), user icon (human gate)
-   - Step name
-   - Duration (completed) or estimated time remaining (running) or blank (waiting)
-   - One-line summary of output (completed) or progress bar with percentage (running)
-   - Steps in "done" state are collapsible. Clicking expands to show the full output preview inline.
+1. **Page load:** Dashboard loads with greeting, stat cards, pending reviews, quick-start, recent runs, and trending topics.
+2. **Stat card tap:** Each stat card is a link to the relevant page (Review, Pipelines, Content).
+3. **Pending review tap:** Opens the review detail page for that item.
+4. **Quick-start actions:** "New Pipeline" navigates to builder. "Quick Run" opens a minimal dialog (topic input + template select + run). "New Style" navigates to style creator.
+5. **Recent run tap:** Opens the run detail page.
+6. **Trending topic tap:** Opens the pipeline builder pre-filled with that topic.
 
-3. **Output preview panel** -- Appears below the timeline once at least one generation step completes. Uses tabs for different output formats. Each tab shows the content in a format-appropriate preview:
-   - **Script/Article:** Rendered text with headings, paragraphs
-   - **Thread:** Stacked post cards, each showing character count
-   - **LinkedIn post:** Single card with LinkedIn-style formatting
-   - **Newsletter:** Email-style layout with sections
-   - **Video script:** Scene-by-scene with visual cues highlighted
-   - **Carousel:** Slide-by-slide horizontal scroll
+### States
 
-**Real-time updates (SSE):**
-- Progress bar animates smoothly as percentage updates arrive (every 2 seconds)
-- Completed steps slide into "done" state with a brief checkmark animation (200ms)
-- New output tabs appear with a subtle highlight to draw attention
-- Status badge in header updates in real-time
+| State | Condition | Display |
+|-------|-----------|---------|
+| **Empty (first use)** | No pipelines, no runs, no reviews | `EmptyDashboard` component: welcome message, single "Create Your First Pipeline" CTA, brief explanation of what Kova does |
+| **Loading** | Data fetching in progress | `DashboardSkeleton`: skeleton cards matching the layout of stat cards, review cards, run cards |
+| **Populated** | Has data | Full dashboard with all sections |
+| **Partial** | Some sections empty | Each section handles its own empty state: "No pending reviews" inline message, "No recent runs" inline message, trending topics always show (from background collection) |
+| **Error** | API failure | Inline error banner at the top of the affected section with retry button. Other sections render normally. |
 
-**Human gate state:**
-When pipeline reaches a human gate, the timeline step becomes prominent:
-```
-| [user] Human Review -- Your input needed              |
-|        [Review & Approve]                             |
-```
-The "Review & Approve" button navigates to the Review Detail screen. A notification is also sent.
+### Micro-interactions
 
-**Fan-out visualization:**
-When a transform step fans out, the timeline shows branching:
-```
-| [done] Multi-Format Transform                         |
-|   +-- [done] Thread (12 posts)                        |
-|   +-- [done] LinkedIn post                            |
-|   +-- [>>>]  Newsletter (writing...)                  |
-|   +-- [done] Video script                             |
-```
-Each branch shows its own status independently.
+- **Stat card hover:** Subtle shadow elevation (`hover:shadow-md`)
+- **Greeting:** Time-of-day-aware greeting ("Good morning," "Good afternoon," "Good evening")
+- **Pending review count:** Badge with count on the Review nav item syncs with the stat card count
+- **Trending topic pills:** Lifecycle dot pulses gently on "Emerging" topics to draw attention
 
-**Completed state:** All steps show checkmarks. Header status reads "Completed." A success banner appears: "All content generated. [View in Content Library]" or, if deployment was included: "Published to X and LinkedIn. [View published content]"
+### Accessibility
 
-**Failed state:** The failed step shows a red warning icon with the error summary (user-friendly language, not stack traces). Actions: "Retry this step," "Skip and continue," "Edit step settings and retry." Other completed steps remain accessible.
-
-**Loading state:** Initial load shows the timeline with all steps in "waiting" state, then the first step transitions to "running" as the SSE connection establishes.
-
-**Mobile:** Timeline becomes a compact vertical list. Output preview moves to a bottom sheet or full-screen view triggered by tapping a completed step. Pause/Cancel actions move to a "..." overflow menu.
+- `<section aria-label="Dashboard greeting and stats">` for the greeting section
+- `<section aria-label="Pending reviews">` for reviews section
+- `<section aria-label="Quick start actions">` for quick-start
+- `<section aria-label="Recent pipeline runs">` for recent runs
+- `<section aria-label="Trending topics">` for trends
+- Stat cards: link role, focus-visible outline, descriptive text
+- Screen reader: stat values read as "{count} {label}" (e.g., "3 Items to review")
 
 ---
 
-### 5.4 Human Review Screen
+## F2. Pipeline Builder
 
-**URL:** `/review/:runId/:stepId`
+### Purpose
 
-**User goal:** Evaluate AI-generated content, optionally edit it, then approve or reject.
+Enable users to create and configure content workflows by selecting a template, adding/removing/reordering steps, configuring brand/style/schedule, and reviewing before saving or running.
 
-**Layout:**
+### User Stories
 
-```
-+----------------------------------------------------------+
-| Header                                                   |
-| [Back to Queue] Review: Thread Draft    [Reject] [Approve]|
-| Pipeline: "My Weekly Thread" -- Step 4 of 6               |
-+----------------------------------------------------------+
-|                                                          |
-| +-- Context Panel (left 35%) --+ +-- Output Panel (65%) |
-| |                              | |                      |
-| | Source / Previous Step       | | Generated Content    |
-| |                              | |                      |
-| | "Original topic:            | | [Format selector]    |
-| |  Why most developers..."    | | Thread | Post | ...   |
-| |                              | |                      |
-| | Style Profile Applied:      | | [Editable content]   |
-| |  "Sarah's Tech Voice"       | |                      |
-| | Tone: Casual authority       | | Post 1/12:           |
-| | Hook: Personal story         | | "I wasted 3 months   |
-| |                              | | on premature..."     |
-| |                              | |                      |
-| | Pipeline Context:           | | Post 2/12:           |
-| | Step 3 output (script)      | | "Here's what nobody  |
-| | [Expand to view]            | | tells you about..."  |
-| |                              | |                      |
-| +------------------------------+ +----------------------+|
-|                                                          |
-| +-- Actions Bar (full width, sticky bottom) ------------+|
-| | [Reject with Feedback]    [Skip]    [Approve & Continue]|
-| +--------------------------------------------------------+|
-+----------------------------------------------------------+
-```
+- As a new user, I want to select a pre-built template, so that I can start creating content without understanding every step.
+- As a power user, I want to add, remove, and reorder steps, so that I can build a custom workflow for my needs.
+- As a scheduled content creator, I want to set a recurring schedule and approval mode, so that content generates automatically.
+- As an agency user, I want to select a specific brand and style profile for this pipeline, so that the output matches my client's identity.
 
-**Sections:**
+### Key Interactions
 
-1. **Context panel (left, 35% width):** Read-only reference information.
-   - Source content: the original topic, URL, or pasted text that started the pipeline
-   - Style profile summary: name + 3 key attributes (hook pattern, structure, pacing)
-   - Previous step output: collapsible section showing the script/draft that was transformed
-   - This panel scrolls independently from the output panel
+1. **Step 1 - Basics:** Enter pipeline name, select template (6 options in card grid), choose source type (topic/URL/file/text), enter source input.
+2. **Step 2 - Steps:** View pre-filled steps from template (or empty if blank). Reorder via up/down buttons. Expand to configure per-step settings. Add new steps from categorized popover. Remove steps.
+3. **Step 3 - Settings:** Select brand (dropdown), select style profile (dropdown), choose trigger (once vs. schedule with radio cards), if scheduled: set frequency + time + approval mode.
+4. **Step 4 - Review:** Summary card showing all configured values. Two CTAs: "Save as Draft" and "Save & Run."
 
-2. **Output panel (right, 65% width):** The AI-generated content, editable.
-   - **Format selector tabs** at the top if the review covers multiple formats (thread + post + newsletter). Each tab shows its format.
-   - **Content area:** The generated content rendered in a format-appropriate way:
-     - **Thread:** Each post in its own editable card with character counter (turns red above 280). Posts are numbered. User can edit text inline, reorder posts (up/down arrows), delete individual posts, or add a new post.
-     - **Post (LinkedIn/Instagram):** Single editable text area with character count and formatting toolbar (bold, italic, line breaks).
-     - **Newsletter:** Editable sections with headings. WYSIWYG-lite (headers, bold, italic, links).
-     - **Video script:** Scene blocks with "Visual" and "Audio/Narration" columns, each editable.
-     - **Carousel:** Slide cards in a horizontal arrangement. Each slide's text is editable.
-   - Edits are auto-saved locally (not persisted to server until approve).
+### States
 
-3. **Actions bar (sticky bottom):**
-   - **Reject with Feedback** (left, red outline) -- opens a text field for feedback. The feedback is sent to the AI for retry. After reject, pipeline re-runs the previous generation step with the feedback injected.
-   - **Skip** (center, neutral) -- skips this format/output without approving or rejecting. Pipeline continues. Content is not deployed.
-   - **Approve & Continue** (right, brand color, primary) -- accepts the content (including any edits). Pipeline proceeds to the next step.
+| State | Display |
+|-------|---------|
+| **Initial** | Template grid visible, no template selected, "Next" disabled until name is entered |
+| **Template selected** | Steps pre-filled, source type auto-suggested based on template |
+| **Steps empty (blank template)** | Empty state with Layers icon + "Add your first step" + Add Step button |
+| **Steps populated** | Ordered list with drag handles (visual only currently), expand/collapse, reorder buttons |
+| **Schedule selected** | Frequency + time inputs appear. Approval mode radio group appears below. |
+| **Review** | Read-only summary. All configured values displayed. Edit links per section to jump back. |
 
-**Bulk review mode:** When reviewing fan-out outputs (multiple formats), a "Bulk Actions" bar appears above the format tabs: "Approve All" and "Select formats to approve" (checkboxes per format).
+### Micro-interactions
 
-**Comparison view (post-MVP):** When the step generated multiple variations, a toggle switches to side-by-side comparison: "Option A | Option B | Option C" with a "Select" button under each.
+- **Template card selection:** Ring highlight (`ring-2 ring-primary`) with smooth transition
+- **Source type selection:** Card highlight with icon color change
+- **Step expand:** Smooth height transition revealing config fields
+- **Step reorder:** Buttons swap positions instantly (no drag animation currently)
+- **Add step popover:** Categorized list (Generate, Refine, Transform, Review, Publish) with category icons
+- **Progress indicator:** Step dots fill as user progresses. Current step is highlighted. Completed steps are checkmarked.
 
-**Empty state:** Not applicable -- this screen always has content to review.
+### Accessibility
 
-**Loading state:** Context panel loads instantly (data from DB). Output panel shows a skeleton of the expected format (e.g., 12 skeleton post cards for a thread) while content loads.
-
-**Error state:** If the generation step failed, this screen shows the error message in the output panel with a "Retry Generation" button. Context panel still shows the source and style info.
-
-**Mobile:** Context panel collapses into an expandable drawer at the top (tap "View context" to expand). Output panel takes full width. Actions bar stays sticky at the bottom. Thread posts stack vertically in full-width cards. Editing uses native textarea behavior.
+- Template grid: `aria-pressed` on selected template card
+- Source type grid: `aria-pressed` on selected source type
+- Step list: `<ol>` semantics, move buttons with `aria-label` ("Move {stepName} up/down")
+- Schedule radio group: `<fieldset>` + `<legend>`, `role="radiogroup"`
+- Approval mode: Same fieldset/legend pattern
+- Progress indicator: `aria-label="Step {n} of 4: {stepName}"`
+- All form inputs have associated `<label>` elements
 
 ---
 
-### 5.5 Style Library
+## F3. Pipeline Execution Dashboard
 
-**URL:** `/styles`
+### Purpose
 
-**User goal:** Browse saved style profiles and decide which to use, edit, or create new.
+Provide real-time visibility into pipeline execution so users can monitor progress, identify failures, and take action (pause, cancel, retry).
 
-**Layout:**
+### User Stories
 
-```
-+----------------------------------------------------------+
-| Header                                                   |
-| Style Library                        [+ Create New Style]|
-+----------------------------------------------------------+
-| Filter Bar                                               |
-| [Search...] [Source Type v] [Sort: Recent v]             |
-+----------------------------------------------------------+
-|                                                          |
-| +-- Style Card --+  +-- Style Card --+  +-- Style --+   |
-| |                |  |                |  |            |   |
-| | "Sarah's Tech  |  | "Viral Thread  |  | "Newsletter|   |
-| |  Voice"        |  |  Voice"        |  |  Formal"   |   |
-| |                |  |                |  |            |   |
-| | Tone: Casual   |  | Tone: Bold     |  | Tone: Prof |   |
-| | Hook: Story    |  | Hook: Contrarian|  | Hook: Data |   |
-| | Rhythm: Punchy |  | Rhythm: Mixed  |  | Rhythm: Med|   |
-| |                |  |                |  |            |   |
-| | Source: URL    |  | Source: URL    |  | Source:Text|   |
-| | Used 47 times  |  | Used 12 times  |  | Used 3x    |   |
-| |                |  |                |  |            |   |
-| | [Apply] [Edit] |  | [Apply] [Edit] |  | [Apply][Ed]|   |
-| +----------------+  +----------------+  +------------+   |
-|                                                          |
-| +-- Style Card --+  +-- Style Card --+                   |
-| | ...            |  | ...            |                   |
-| +----------------+  +----------------+                   |
-+----------------------------------------------------------+
-```
+- As a content creator, I want to see which step is currently running, so that I know how long until completion.
+- As a user whose pipeline failed, I want to see exactly which step failed and why, so that I can retry or skip.
+- As a user with fan-out transforms, I want to see the status of each branch, so that I know which formats succeeded.
+- As a user waiting for review, I want to be notified when the pipeline reaches a human gate, so that I can approve promptly.
 
-**Style card contents:**
-- **Name** (text-lg, bold) -- user-defined name
-- **Top 3 attributes** -- the most defining composition attributes of this style, shown as label:value pairs (Hook Pattern, Content Structure, Section Pacing are default; user can pin others)
-- **Source badge** -- icon indicating how this profile was created (URL, text, audio, video, image)
-- **Usage count** -- "Used N times" in pipelines
-- **Actions:** "Apply" (opens a pipeline selector or copies to clipboard for use), "Edit" (opens Style Profile Detail), overflow menu ("Duplicate," "Delete")
+### Key Interactions
 
-**Filter bar:**
-- Search: filters by name and attribute content
-- Source Type dropdown: All, URL, Text, Audio, Video, Image
-- Sort: Recent (default), Most Used, Alphabetical
+1. **View run:** Navigate from pipeline detail or notification. See header with pipeline name, run status badge, step count.
+2. **Monitor progress:** Vertical timeline shows each step with status icon, name, and progress bar (if running).
+3. **View outputs:** Completed steps show a one-line output preview. Click to expand full output.
+4. **Handle failure:** Failed step shows error message in red. "Retry this step" and "Skip and continue" buttons appear inline.
+5. **Pause/Cancel:** Header buttons for running pipelines.
+6. **View branches:** Fan-out steps show indented sub-items with branch icon + status for each format.
 
-**Empty state:**
-```
-+----------------------------------------------------------+
-| No style profiles yet                                    |
-|                                                          |
-| Style profiles capture how content is composed --        |
-| the hooks, structure, pacing, and formatting.            |
-|                                                          |
-| Paste a URL to successful content, and Kova              |
-| will extract the composition pattern automatically.      |
-|                                                          |
-|              [Create Your First Style]                   |
-+----------------------------------------------------------+
-```
+### States
 
-**Loading state:** Grid of skeleton cards (gray rectangles with pulsing animation).
+| State | Display |
+|-------|---------|
+| **Running** | Timeline with active step showing spinner + progress bar. Pause/Cancel buttons in header. |
+| **Waiting for review** | Timeline shows review icon (User) on the waiting step. "Review" link navigates to review detail. |
+| **Completed** | Green success banner with "All content generated" + link to Content Library. All steps show checkmarks. |
+| **Failed** | Red error banner with failed step name + error message. Retry/Skip buttons. |
+| **Cancelled** | Grey cancelled banner. Timeline shows completed steps + cancelled remaining steps. |
+| **Not found** | "Run not found" message with back-link to pipeline detail. |
 
-**Error state:** Inline error banner above the grid: "Could not load style profiles. [Retry]"
+### Micro-interactions
 
-**Mobile:** Cards stack in a single column. Filter bar collapses: search field visible, filters behind a "Filter" button that opens a bottom sheet. Cards show only name + top 2 attributes to save space; full details on tap.
+- **Running step spinner:** Loader2 icon with `animate-spin` in brand color
+- **Progress bar:** Smooth fill animation via `Progress` component
+- **Step completion:** Icon transitions from spinner to checkmark
+- **Error appearance:** Red border on failed step card, error text fades in
+- **SSE updates:** Steps update in real-time without page refresh (polling DB every 2s via SSE)
+
+### Accessibility
+
+- Timeline uses semantic list (`<div>` with step items, each with status role)
+- Status icons have `aria-hidden="true"`, status is communicated via text
+- Progress bar: `role="progressbar"`, `aria-valuenow`, `aria-valuemin`, `aria-valuemax`
+- Live updates: `aria-live="polite"` on the timeline container so screen readers announce step completions
+- Action buttons: clear labels ("Retry this step", "Skip and continue", "Pause pipeline", "Cancel pipeline")
 
 ---
 
-### 5.6 Style Profile Detail
+## F4. Human Review Screen
 
-**URL:** `/styles/:id`
+### Purpose
 
-**User goal:** View and understand a style profile's attributes, and optionally edit them.
+Present pipeline outputs that require human approval in a format that enables efficient evaluation and inline editing before approving, rejecting, or skipping.
 
-**Layout:**
+### User Stories
 
-```
-+----------------------------------------------------------+
-| Header                                                   |
-| [Back] "Sarah's Tech Voice"         [Duplicate] [Delete] |
-+----------------------------------------------------------+
-|                                                          |
-| +-- Profile Summary (full width) ----------------------+ |
-| | Source: https://x.com/sarah/status/12345...           | |
-| | Created: Jan 15, 2025 -- Used in 47 pipeline runs    | |
-| +------------------------------------------------------+ |
-|                                                          |
-| +-- Attributes (full width) --------------------------+  |
-| |                                                      | |
-| | Hook Pattern                              [Edit]     | |
-| | "Personal story + bold contrarian claim:             | |
-| |  'I did X. Here's what nobody tells you.'"          | |
-| |                                                      | |
-| | Tone                                      [Edit]     | |
-| | "Casual authority -- conversational but confident.   | |
-| |  Uses 'you' frequently. Avoids jargon."             | |
-| |                                                      | |
-| | Rhythm                                    [Edit]     | |
-| | "Short. Punchy. Then a longer sentence for context.  | |
-| |  Average sentence: 8-12 words."                      | |
-| |                                                      | |
-| | Structure                                 [Edit]     | |
-| | "8-12 posts per thread. Clear narrative arc.         | |
-| |  Hook in post 1, insight per post, CTA at end."     | |
-| |                                                      | |
-| | Emoji Usage                               [Edit]     | |
-| | "Strategic: one per post opening, never mid-sentence"| |
-| |                                                      | |
-| | Engagement Techniques                     [Edit]     | |
-| | "Cliffhanger at post 3, question at post 7,         | |
-| |  CTA at end"                                         | |
-| |                                                      | |
-| | Formatting                                [Edit]     | |
-| | "Numbered (1/, 2/), line break between ideas,        | |
-| |  bold for emphasis"                                   | |
-| |                                                      | |
-| | Vocabulary Level                          [Edit]     | |
-| | "Simple words, no jargon, daily life analogies"      | |
-| |                                                      | |
-| | Perspective                               [Edit]     | |
-| | "First person storytelling with direct reader address"| |
-| |                                                      | |
-| | Platform Conventions                      [Edit]     | |
-| | "'/' numbering, ends with 'Follow for more'"        | |
-| +------------------------------------------------------+ |
-|                                                          |
-| +-- Preview (full width) ----------------------------+   |
-| | "Generate a sample paragraph in this style"         |   |
-| | [Generate Preview]                                  |   |
-| |                                                      |  |
-| | (Generated preview text appears here)               |   |
-| +-----------------------------------------------------+  |
-|                                                          |
-| +-- Usage (full width) ------------------------------+   |
-| | Pipelines using this style:                         |   |
-| | - My Weekly Thread Pipeline (last run: 2h ago)      |   |
-| | - Blog to Social (last run: 3 days ago)             |   |
-| +-----------------------------------------------------+  |
-+----------------------------------------------------------+
-```
+- As a content creator reviewing a thread, I want to see the source context alongside the generated output, so that I can evaluate quality.
+- As a reviewer, I want to edit individual posts inline before approving, so that I can fix small issues without rejecting.
+- As an agency user with multiple pending reviews, I want to bulk-approve items that look good, so that I can process reviews quickly.
+- As a reviewer rejecting content, I want to provide feedback, so that the retry generates better output.
 
-**Sections:**
+### Key Interactions
 
-1. **Profile summary** -- Source URL/text snippet, creation date, usage count. Non-editable metadata.
+**Review Queue (`/review`):**
+1. View all pending review items as a filterable list
+2. Filter by status (All, Pending, Approved, Rejected) via tabs
+3. Sort by oldest/newest
+4. Enter selection mode for bulk approve/reject
+5. Click individual item to open review detail
 
-2. **Attributes list** -- Each of the 10 composition attributes (from PRD section 7.2) displayed as a labeled block with the extracted value. Each has an "Edit" button that converts the block to an editable textarea. Changes are saved on blur or via a "Save" button that appears during editing.
+**Review Detail (`/review/[runId]/[stepId]`):**
+1. See two-column layout: context (left, 35%) + output (right, 65%)
+2. Read context: source info, style profile attributes, previous step output (expandable)
+3. Edit output: each content unit (post in a thread, section in an article) is an editable textarea
+4. See character counts per post (red when over platform limit)
+5. Take action: Approve & Continue / Skip / Reject with Feedback
 
-3. **Preview** -- A "Generate Preview" button asks the AI to write a short sample paragraph using this style profile. Shows the user what content composed in this style would look like structurally. Result is cached and shown on subsequent visits until the profile is edited.
+### States
 
-4. **Usage** -- List of pipelines that reference this style profile, with last run dates. Clicking a pipeline name navigates to its builder.
+**Review Queue:**
 
-**Edit behavior:** Clicking "Edit" on any attribute transitions that block into edit mode (textarea with the current value). A "Save" and "Cancel" button pair appears. Only one attribute edits at a time. Saving triggers a brief success toast: "Attribute updated."
+| State | Display |
+|-------|---------|
+| **Empty** | `EmptyState` with CheckSquare icon: "No items to review" |
+| **Populated** | List of `ReviewCard` components with warning left-border |
+| **Selection mode** | Checkboxes appear on each card. Bulk action toolbar slides in. |
+| **Filtered empty** | "No items match your filters" with suggestion to adjust |
 
-**Loading state:** Attribute values show skeleton text. Summary loads first, then attributes.
+**Review Detail:**
 
-**Error state:** If profile not found, show "This style profile could not be found. It may have been deleted. [Back to Style Library]"
+| State | Display |
+|-------|---------|
+| **Loaded** | Two-column layout with context + editable output |
+| **Editing** | Textarea content differs from original. Character count updates. |
+| **Over limit** | Character count turns red. Approve button still available (warning, not block). |
+| **Approving** | "Approve" button shows loading state. Content is submitted. |
+| **Rejecting** | Feedback textarea appears below the output panel. Submit sends feedback. |
 
-**Mobile:** Full-width single column. Attributes stack with full-width edit areas. Preview section at the bottom.
+### Micro-interactions
+
+- **Selection mode enter:** Checkboxes fade in on each card. Toolbar slides down from top of list.
+- **Bulk action:** Approve/Reject affects all selected items. Progress indicator during batch operation.
+- **Character count:** Live update as user types. Color transition from muted to red at limit.
+- **Approve success:** Brief green flash on the action bar. Auto-navigate to next pending review or back to queue.
+- **Reject:** Feedback textarea expands smoothly below the output panel.
+- **Previous step output:** Expand/collapse with ChevronDown/ChevronUp toggle.
+
+### Accessibility
+
+- Review cards: `role="button"` when selectable, keyboard-activatable (Enter/Space)
+- Checkboxes: `aria-label="Select {stepName}"` per card
+- Bulk action toolbar: `aria-live="polite"` to announce selection count changes
+- Textarea editing: standard form semantics, character count is `aria-describedby` on the textarea
+- Action bar: sticky bottom, keyboard-accessible, clear button labels
+- Two-column layout: on screen readers, context is announced before output (natural reading order)
 
 ---
 
-### 5.7 Create Style from Reference
-
-**URL:** `/styles/new`
-
-**User goal:** Provide reference content and see the extracted style profile.
-
-**Layout (two-phase screen):**
-
-**Phase 1: Input**
-
-```
-+----------------------------------------------------------+
-| Header                                                   |
-| [Back] Create Style Profile                              |
-+----------------------------------------------------------+
-|                                                          |
-|  How would you like to provide a reference?              |
-|                                                          |
-|  [URL]  [Text]  [File]                                   |
-|                                                          |
-|  +-- Input Area (centered, max-width 600px) -----------+ |
-|  |                                                      | |
-|  |  Paste a URL to content you admire                   | |
-|  |  +----------------------------------------------+   | |
-|  |  | https://                                     |   | |
-|  |  +----------------------------------------------+   | |
-|  |                                                      | |
-|  |  Examples: an X/Twitter thread, a YouTube video,     | |
-|  |  a blog post, a LinkedIn post                        | |
-|  |                                                      | |
-|  |                            [Analyze Style]           | |
-|  +------------------------------------------------------+ |
-+----------------------------------------------------------+
-```
-
-Input types (tab selector at top):
-- **URL:** Single URL input field. Helper text shows supported platforms.
-- **Text:** Large textarea. Placeholder: "Paste the content you want to analyze..."
-- **File:** Drag-and-drop zone. Accepts video, audio, image files. Shows accepted formats and size limits.
-
-**Phase 2: Extraction (loading)**
-
-After clicking "Analyze Style," the input area transitions to a loading state:
-
-```
-+----------------------------------------------------------+
-| Analyzing style...                                       |
-|                                                          |
-| [Fetching content]     ............ done                 |
-| [Extracting patterns]  ||||||||.... 72%                  |
-|                                                          |
-| This usually takes 10-30 seconds.                        |
-+----------------------------------------------------------+
-```
-
-Shows real progress for multi-step extraction: fetching content, processing (transcription for video/audio), extracting attributes.
-
-**Phase 3: Result**
-
-```
-+----------------------------------------------------------+
-| Header                                                   |
-| [Back] Style Extracted                   [Save Profile]  |
-+----------------------------------------------------------+
-|                                                          |
-| +-- Source Info ---+  +-- Extracted Attributes ---------+ |
-| |                  |  |                                 | |
-| | Source: x.com/...|  | Hook Pattern          [Edit]   | |
-| | Type: Thread     |  | "Personal story + ..."         | |
-| | Author: @sarah   |  |                                | |
-| | 12 posts         |  | Tone                  [Edit]   | |
-| |                  |  | "Casual authority..."          | |
-| | [View source]    |  |                                | |
-| |                  |  | Rhythm                [Edit]   | |
-| |                  |  | "Short. Punchy..."             | |
-| |                  |  |                                | |
-| |                  |  | [... all 10 attributes ...]    | |
-| +------------------+  |                                | |
-|                       | +-- Name This Profile --------+| |
-|                       | | [My new style profile     ] || |
-|                       | +-----------------------------+| |
-|                       |                                | |
-|                       |           [Save Profile]       | |
-|                       +--------------------------------+ |
-+----------------------------------------------------------+
-```
-
-**Result sections:**
-- **Source info (left, 30%):** What was analyzed -- URL, content type detected, author if available, content length.
-- **Extracted attributes (right, 70%):** All 10 attributes extracted by the AI, each editable (same edit pattern as Style Profile Detail). The user can review and tweak any attribute before saving.
-- **Name input:** Text field for naming the profile. Auto-suggested based on source (e.g., "@sarah's Thread Style").
-- **Save Profile** button: Saves to the Style Library and navigates to the Style Profile Detail view.
-
-**Error states:**
-- URL not accessible: "Could not fetch this URL. Check that it's a public link, or try pasting the content directly." + switch to Text tab.
-- Content too short: "The provided content is too short for style analysis (minimum ~100 words). Try a longer piece of content."
-- Processing failed: "Style extraction encountered an issue. [Retry] or try a different reference."
-
-**Mobile:** Phase 1 is full-width. Phase 2 loading is full-screen. Phase 3: source info collapses to a summary bar, extracted attributes take full width in a scrollable list.
-
----
-
-### 5.8 Content Library
-
-**URL:** `/content`
-
-**User goal:** Browse all generated content, find specific pieces, and take action (export, republish, edit).
-
-**Layout:**
-
-```
-+----------------------------------------------------------+
-| Header                                                   |
-| Content Library                                          |
-+----------------------------------------------------------+
-| Filter Bar                                               |
-| [Search...] [Format v] [Platform v] [Date v] [Status v] |
-+----------------------------------------------------------+
-|                                                          |
-| +-- Content Card --+  +-- Content Card --+  +-- Card --+|
-| |                  |  |                  |  |           ||
-| | [Thread icon]    |  | [Post icon]      |  | [Script] ||
-| | "Why devs waste  |  | "Key insights    |  | "Full    ||
-| |  time on..."     |  |  from our..."    |  |  script"  ||
-| |                  |  |                  |  |           ||
-| | 12 posts         |  | LinkedIn         |  | 2,400 w  ||
-| | Published to X   |  | Draft            |  | Published||
-| | 2 hours ago      |  | Yesterday        |  | to YT    ||
-| |                  |  |                  |  |           ||
-| | From: "Weekly    |  | From: "Blog to   |  | From: ...||
-| |  Thread Pipeline"|  |  Social"         |  |           ||
-| |                  |  |                  |  |           ||
-| | [View] [Export]  |  | [View] [Publish] |  | [View]   ||
-| +------------------+  +------------------+  +----------+||
-+----------------------------------------------------------+
-```
-
-**Content card contents:**
-- **Format icon + type label** -- Thread, Post, Script, Newsletter, Carousel, etc.
-- **Content preview** -- First 80 characters of the content
-- **Metadata** -- Format-specific: post count for threads, word count for articles, slide count for carousels
-- **Deployment status** -- "Published to [Platform]" with timestamp, "Draft," or "Exported"
-- **Source pipeline** -- Which pipeline generated this content
-- **Actions:** "View" (opens full preview), "Export" (download as text/markdown), "Publish" (for unpublished content, opens platform selector), overflow menu ("Delete," "Re-run pipeline")
-
-**Filter bar:**
-- Search: full-text search across content
-- Format: All, Thread, Post, Article, Newsletter, Carousel, Video Script, Podcast, Reddit, Short Video
-- Platform: All, X/Twitter, YouTube, Instagram, LinkedIn, Export
-- Date: Today, This Week, This Month, All Time
-- Status: All, Published, Draft, Pending Review
-
-**View modes:** Grid (default, as shown) or List (compact table with columns: Title, Format, Platform, Status, Date, Actions).
-
-**Empty state:**
-```
-No content yet.
-
-Content appears here after your pipelines generate it.
-Run your first pipeline to see results.
-
-[Go to Pipelines]
-```
-
-**Loading state:** Skeleton card grid.
-
-**Error state:** Inline banner: "Could not load content. [Retry]"
-
-**Mobile:** Single-column card list. Filter bar collapses to a "Filter" button opening a bottom sheet. Cards show compact info: format icon, title, status badge, date.
-
----
-
-### 5.9 Platform Connections (Settings)
-
-**URL:** `/settings/platforms`
-
-**User goal:** Connect social media accounts for automated publishing.
-
-**Layout:**
-
-```
-+----------------------------------------------------------+
-| Header                                                   |
-| Settings > Platform Connections                          |
-+----------------------------------------------------------+
-|                                                          |
-| Connected Platforms                                      |
-|                                                          |
-| +-- Platform Card (connected) ------------------------+  |
-| | [X logo]  X / Twitter                               |  |
-| | @sarahcreates -- Connected Jan 10, 2025             |  |
-| | Permissions: Post threads, upload media              |  |
-| |                                     [Disconnect]    |  |
-| +-----------------------------------------------------+  |
-|                                                          |
-| +-- Platform Card (connected) ------------------------+  |
-| | [YT logo]  YouTube                                  |  |
-| | Sarah's Tech Channel -- Connected Jan 12, 2025      |  |
-| | Permissions: Upload videos, manage metadata          |  |
-| |                                     [Disconnect]    |  |
-| +-----------------------------------------------------+  |
-|                                                          |
-| Available Platforms                                      |
-|                                                          |
-| +-- Platform Card (not connected) --------------------+  |
-| | [IG logo]  Instagram                                |  |
-| | Connect your Instagram Business or Creator account  |  |
-| | to publish carousels and reels.                     |  |
-| |                                      [Connect]      |  |
-| +-----------------------------------------------------+  |
-|                                                          |
-| +-- Platform Card (not connected) --------------------+  |
-| | [LI logo]  LinkedIn                                 |  |
-| | Connect to publish posts and articles.              |  |
-| | Coming soon                                         |  |
-| +-----------------------------------------------------+  |
-|                                                          |
-| +-- Platform Card (not connected) --------------------+  |
-| | [WP logo]  WordPress                                |  |
-| | Connect to publish blog articles.                   |  |
-| | Coming soon                                         |  |
-| +-----------------------------------------------------+  |
-+----------------------------------------------------------+
-```
-
-**Connected platform card:**
-- Platform logo (in platform color) + name
-- Account identifier (username, channel name)
-- Connection date
-- Permissions summary
-- "Disconnect" button (destructive, requires confirmation: "Disconnect @sarahcreates from Kova? Scheduled pipelines that deploy to X will be paused.")
-
-**Available platform card:**
-- Platform logo (muted color) + name
-- One-line description of what connecting enables
-- "Connect" button (brand color) -- initiates OAuth flow
-- "Coming soon" label for post-MVP platforms (no button, muted text)
-
-**OAuth flow:**
-1. User clicks "Connect"
-2. New window/tab opens with platform OAuth consent screen
-3. User authorizes
-4. Window closes, platform card transitions from "Available" to "Connected" with a success animation (green checkmark flash)
-
-**Error states:**
-- OAuth failed: "Connection failed. This can happen if you denied permissions or the session expired. [Try Again]"
-- OAuth timeout: "Connection timed out. [Try Again]"
-- Token expired (detected on pipeline run): The connected card shows a warning badge: "Reconnection needed. Your token has expired. [Reconnect]"
-
-**Mobile:** Cards stack full-width. Same layout, just single column.
-
----
-
-### 5.10 Settings
-
-**URL:** `/settings`
-
-**User goal:** Configure account-wide preferences that affect how pipelines and content behave.
-
-**Layout:**
-
-Settings uses a left-nav sub-navigation within the main content area (on desktop) or a list menu (on mobile).
-
-```
-+----------------------------------------------------------+
-| Header                                                   |
-| Settings                                                 |
-+----------------------------------------------------------+
-| +-- Sub-nav (left, 200px) --+  +-- Content (right) ---+ |
-| |                            |  |                      | |
-| | [*] Platforms              |  | (Selected section    | |
-| | [ ] Brand                 |  |  content here)       | |
-| | [ ] AI Models              |  |                      | |
-| | [ ] Defaults               |  |                      | |
-| |                            |  |                      | |
-| +----------------------------+  +----------------------+ |
-+----------------------------------------------------------+
-```
-
-**Sub-pages:**
-
-**Brand (`/settings/brand`):**
-
-| Field | Type | Description |
-|---|---|---|
-| Brand/Creator name | Text input | Displayed in generated content where applicable |
-| Description | Textarea | Brief description of brand/creator (1-2 sentences) |
-| Default voice & tone | Textarea | E.g., "Professional but approachable, uses analogies" |
-| Target audience | Textarea | E.g., "Tech professionals aged 25-45, interested in productivity" |
-| Vocabulary preferences | Two text areas | "Words to use" and "Words to avoid" |
-| Content guidelines | Textarea | Guardrails: topics to avoid, required disclaimers, etc. |
-
-All fields auto-save on blur with a subtle "Saved" confirmation.
-
-**AI Models (`/settings/models`):**
-
-| Task | Field | Default |
-|---|---|---|
-| Writing AI | Dropdown: Claude, GPT-4o, Gemini | Claude Sonnet (recommended) |
-| Transcription | Dropdown: faster-whisper, OpenAI Whisper | faster-whisper (free) |
-| Voice Generation | Dropdown: Kokoro, ElevenLabs | Kokoro (free) |
-| Image Generation | Dropdown: Pollinations, DALL-E | Pollinations (free) |
-
-Each dropdown shows model name + cost indicator (Free, $, $$, $$$).
-
-"Recommended" badge on the default selection. Changes apply to all future pipeline runs.
-
-**Defaults (`/settings/defaults`):**
-
-| Field | Type | Description |
-|---|---|---|
-| Default style profile | Dropdown of saved styles | Applied when no style explicitly selected |
-| Default approval mode | Radio: Full autopilot, Review before publish, Per-platform | Controls scheduled pipelines |
-| Default output formats | Checkboxes per format | Which formats to generate by default |
-| Timezone | Timezone picker | For scheduling and timestamps |
-| Notification preferences | Toggle per type | Email/push for: Pipeline complete, Review needed, Daily digest |
-
-**Mobile:** Sub-nav becomes a list menu. Tapping an item navigates to the full-screen settings page with a back arrow.
-
----
-
-### 5.11 Trend Explorer
-
-**URL:** `/trends`
-
-**User goal:** Discover trending topics in their niche and use them as pipeline input.
-
-**Layout:**
-
-```
-+----------------------------------------------------------+
-| Header                                                   |
-| Trend Explorer                                           |
-+----------------------------------------------------------+
-| Niche Selector                                           |
-| [Your niche: SaaS & Startups v]  [Last 24h v]           |
-+----------------------------------------------------------+
-|                                                          |
-| +-- Trending Topics List (full width) ----------------+  |
-| |                                                      | |
-| | 1. "AI-powered developer tools"       [Rising]       | |
-| |    Reddit (r/startups) + YouTube + Google Trends     | |
-| |    Score: 87/100                                     | |
-| |    [Create Content]  [Save Topic]                    | |
-| |                                                      | |
-| | 2. "Bootstrapping vs VC in 2025"      [Emerging]     | |
-| |    Reddit (r/SaaS) + HackerNews                      | |
-| |    Score: 72/100                                     | |
-| |    [Create Content]  [Save Topic]                    | |
-| |                                                      | |
-| | 3. "Remote team culture"              [Peak]         | |
-| |    Google Trends + LinkedIn                          | |
-| |    Score: 91/100                                     | |
-| |    [Create Content]  [Save Topic]                    | |
-| |                                                      | |
-| | ...                                                  | |
-| +------------------------------------------------------+ |
-|                                                          |
-| +-- Lifecycle Legend ----------------------------------+  |
-| | [green] Emerging: Early signal, 1-2 platforms        | |
-| | [blue]  Rising: Growing on 3+ platforms              | |
-| | [amber] Peak: High engagement, growth flattening     | |
-| | [gray]  Declining: Engagement decreasing             | |
-| +------------------------------------------------------+ |
-+----------------------------------------------------------+
-```
-
-**Topic row contents:**
-- **Rank number** (based on composite score)
-- **Topic title** (bold)
-- **Lifecycle badge:** Emerging (green), Rising (blue), Peak (amber), Declining (gray)
-- **Source platforms:** Icons for each platform where this topic was detected
-- **Score:** Composite relevance score (0-100)
-- **Actions:**
-  - "Create Content" -- opens a Quick Run dialog pre-filled with this topic
-  - "Save Topic" -- saves to a personal list for later use
-
-**Niche selector:** Dropdown matching user's configured niches. "Add niche" option opens a simple text input to define a new niche keyword set.
-
-**Time range:** Last 24h (default), Last 3 days, Last week.
-
-**Empty state:** "No trending topics found for this niche in the selected time range. Try expanding the time range or adjusting your niche keywords. Trend data updates every 4 hours."
-
-**Loading state:** Skeleton list rows.
-
-**Mobile:** Same layout, single column. Lifecycle legend collapses into a tooltip on the lifecycle badges.
-
----
-
-### 5.12 Onboarding Flow
-
-**Trigger:** First visit after account creation.
-
-**User goal:** Create their first style profile and run their first pipeline within 5 minutes.
-
-**Design philosophy:** The onboarding IS the product. Users don't "learn" the app then "use" it -- they use it from the first screen and learn by doing.
-
-**Flow (3 steps, each is a real action that produces a real result):**
-
-**Step 1: "Tell Kova your voice" (Style Creation)**
-
-```
-+----------------------------------------------------------+
-| Step 1 of 3                                              |
-|                                                          |
-| First, let's capture your voice.                         |
-|                                                          |
-| Paste a link to content you've created                   |
-| or content whose style you admire.                       |
-|                                                          |
-| +----------------------------------------------+        |
-| | https://                                     |        |
-| +----------------------------------------------+        |
-|                                                          |
-| Or describe your style in words:                         |
-| +----------------------------------------------+        |
-| | Casual, conversational, uses analogies...    |        |
-| +----------------------------------------------+        |
-|                                                          |
-|                          [Skip for now]  [Continue]      |
-+----------------------------------------------------------+
-```
-
-If user provides a URL, the system extracts a style profile (with a loading state). If they describe in words, a profile is created from that description. If they skip, no style is applied (the default Brand settings are used).
-
-The result is a saved style profile. The user sees a brief summary: "Got it. This content's composition pattern: [hook pattern], [structure], [pacing]."
-
-**Step 2: "Choose your workflow" (Template Selection)**
-
-```
-+----------------------------------------------------------+
-| Step 2 of 3                                              |
-|                                                          |
-| What kind of content do you want to create?              |
-|                                                          |
-| +-- Template Card --+  +-- Template Card --+             |
-| | Topic to          |  | Turn a URL into   |             |
-| | Everything         |  | Social Posts       |             |
-| |                    |  |                    |             |
-| | Type a topic,     |  | Paste a link to    |             |
-| | get content for   |  | your blog/video,   |             |
-| | every platform.   |  | get threads and    |             |
-| |                    |  | posts.             |             |
-| | [Select]           |  | [Select]           |             |
-| +--------------------+  +--------------------+             |
-|                                                          |
-| +-- Template Card --+  +-- Template Card --+             |
-| | Daily Trending    |  | YouTube to         |             |
-| | Content           |  | Everything         |             |
-| | ...               |  | ...                |             |
-| | [Select]          |  | [Select]           |             |
-| +-------------------+  +--------------------+             |
-|                                                          |
-|                          [Skip for now]  [Continue]      |
-+----------------------------------------------------------+
-```
-
-Only 4 templates shown (the most common starting points). Selecting one pre-configures a pipeline.
-
-**Step 3: "Run your first pipeline" (Immediate Execution)**
-
-```
-+----------------------------------------------------------+
-| Step 3 of 3                                              |
-|                                                          |
-| Almost there. Give Kova something to work with.          |
-|                                                          |
-| [Context-dependent input based on Step 2 selection]      |
-|                                                          |
-| Topic: (if "Topic to Everything")                        |
-| +----------------------------------------------+        |
-| | Why most developers waste time on...         |        |
-| +----------------------------------------------+        |
-|                                                          |
-| URL: (if "Turn a URL into Social Posts")                 |
-| +----------------------------------------------+        |
-| | https://                                     |        |
-| +----------------------------------------------+        |
-|                                                          |
-| Style: [Style from Step 1 (pre-selected)]               |
-| Formats: [Thread] [LinkedIn Post] [Newsletter]           |
-| (pre-checked based on template defaults)                 |
-|                                                          |
-|                                    [Run Pipeline]        |
-+----------------------------------------------------------+
-```
-
-Clicking "Run Pipeline" creates and runs the pipeline, then navigates to the Pipeline Run View. The user watches their first content being generated in real-time.
-
-**After onboarding:** The Dashboard shows the running pipeline. No separate "tutorial" screen. The user is now using the product.
-
-**Skip behavior:** "Skip for now" on any step advances to the next. If all steps are skipped, the user lands on the Dashboard with the empty state (which provides the same three starting points in a less guided format).
-
----
-
-## 6. Interaction Flows
-
-### 6.1 First-Time Onboarding (New User to First Pipeline Run)
-
-```
-1. User signs up / logs in for the first time
-2. System detects no prior activity
-3. --> Onboarding Step 1: "Tell Kova your voice"
-   a. User pastes URL (or describes style, or skips)
-   b. If URL: loading state (10-30s), then style summary
-   c. Style profile saved automatically
-4. --> Onboarding Step 2: "Choose your workflow"
-   a. User selects a template card (or skips)
-   b. Pipeline template loaded
-5. --> Onboarding Step 3: "Run your first pipeline"
-   a. User enters topic or URL (or skips)
-   b. User clicks "Run Pipeline"
-6. --> Pipeline Run View
-   a. Real-time progress via SSE
-   b. Steps complete one by one with previews
-7. --> Human Review (if pipeline includes review gate)
-   a. User sees generated content in review screen
-   b. User edits (optional) and approves
-8. --> Pipeline completes
-   a. Content appears in Content Library
-   b. If deploy step included and platform connected: content published
-   c. If no platform connected: content available for export
-9. --> Dashboard (on next visit)
-   a. Shows recent run, pending reviews, and quick start options
-```
-
-**Time from sign-up to first content generated:** Under 3 minutes (excluding style extraction wait time).
-
-### 6.2 Creating a Pipeline from Template
-
-```
-1. User clicks "New Pipeline" (from Dashboard, sidebar, or FAB)
-2. --> Pipeline Builder, Step 1: Basics
-   a. User enters pipeline name (optional, auto-generated if skipped)
-   b. User selects a template from the card grid
-   c. Source type auto-selected based on template
-   d. User enters source input (topic, URL, etc.)
-   e. User clicks "Continue"
-3. --> Pipeline Builder, Step 2: Steps
-   a. Steps pre-filled from template
-   b. User reviews step list (can expand, edit, remove, reorder, add)
-   c. User clicks "Continue"
-4. --> Pipeline Builder, Step 3: Settings
-   a. User selects style profile from dropdown
-   b. User chooses trigger: Run once (default) or Schedule
-   c. If schedule: configure frequency and time
-   d. Approval mode defaults to "Review before publish"
-   e. User clicks "Continue"
-5. --> Pipeline Builder, Step 4: Review
-   a. User reviews summary of all configuration
-   b. User clicks "Save & Run" (or "Save as Template" to save without running)
-6. --> Pipeline Run View (automatic navigation)
-```
-
-### 6.3 Running a Pipeline and Reviewing Outputs
-
-```
-1. Pipeline starts (from builder, dashboard quick action, or schedule trigger)
-2. --> Pipeline Run View
-   a. Progress timeline shows all steps
-   b. Steps execute sequentially
-   c. Each completed step reveals its output in the preview panel
-3. When pipeline reaches Human Review Gate:
-   a. Pipeline status changes to "Waiting for approval"
-   b. Notification sent (in-app + email if configured)
-   c. Run view shows prominent "Review & Approve" button on the gate step
-4. User clicks "Review & Approve"
-5. --> Human Review Screen
-   a. Context panel shows source and style info
-   b. Output panel shows generated content in format tabs
-   c. User reviews each format:
-      - Reads through the content
-      - Optionally edits inline (text changes, reorder thread posts, etc.)
-      - Switches between format tabs
-   d. User clicks "Approve & Continue"
-6. --> Pipeline resumes
-   a. Run view shows remaining steps executing
-   b. Deploy steps publish to connected platforms
-7. Pipeline completes
-   a. Success banner in Run View
-   b. Content Library updated
-   c. Dashboard updated
-```
-
-### 6.4 Creating a Style Profile from a URL
-
-```
-1. User clicks "Create New Style" (from Style Library, onboarding, or quick action)
-2. --> Create Style Screen, Phase 1: Input
-   a. URL tab selected by default
-   b. User pastes URL (e.g., https://x.com/creator/status/123456)
-   c. User clicks "Analyze Style"
-3. --> Phase 2: Extraction (loading)
-   a. Progress shows: "Fetching content... Extracting patterns..."
-   b. Duration: 10-30 seconds
-4. --> Phase 3: Result
-   a. Left panel: source info (URL, content type, author, length)
-   b. Right panel: 10 extracted attributes with values
-   c. User reviews each attribute
-   d. User optionally edits attributes (click "Edit" on any attribute)
-   e. User enters profile name (auto-suggested)
-   f. User clicks "Save Profile"
-5. --> Style Profile Detail (automatic navigation)
-   a. Full profile view with all attributes
-   b. "Generate Preview" button available
-6. Profile now available in all pipeline style dropdowns
-```
-
-### 6.5 Scheduling a Recurring Pipeline
-
-```
-1. User creates or edits a pipeline (Pipeline Builder)
-2. In Step 3 (Settings):
-   a. User selects "Schedule" under Trigger
-   b. Frequency options appear: Daily, Weekdays, Weekly, Custom
-   c. User selects frequency (e.g., "Weekdays")
-   d. User sets time (e.g., "10:00 AM")
-   e. Timezone auto-detected, editable
-   f. Start date defaults to today
-3. Approval mode options appear:
-   a. "Full autopilot" -- generate and publish automatically
-   b. "Review before publish" -- generate, queue for review
-   c. "Per-platform" -- configure per platform
-   d. User selects preferred mode
-4. User must have:
-   a. A style profile selected (required for scheduled pipelines -- the AI needs to know the voice)
-   b. A niche configured (for trend-powered pipelines)
-   c. At least one platform connected (for deploy steps)
-   System shows inline warnings if any are missing.
-5. User completes builder and clicks "Save & Activate Schedule"
-6. --> Pipeline detail view shows:
-   a. Schedule badge: "Runs weekdays at 10:00 AM"
-   b. Next run time
-   c. "Pause Schedule" / "Edit Schedule" actions
-7. Pipeline triggers automatically on schedule
-   a. If approval mode is "Review before publish":
-      - Content generated
-      - Notification sent: "Your daily content is ready for review"
-      - Items appear in Review Queue on Dashboard
-   b. If "Full autopilot":
-      - Content generated and published
-      - Daily digest notification: "Published 3 pieces today. View performance."
-```
-
-### 6.6 Connecting a Platform (OAuth Flow)
-
-```
-1. User navigates to Settings > Platforms
-   (or encounters a "Connect platform" prompt in Pipeline Builder)
-2. User finds the platform card (e.g., "X / Twitter")
-3. User clicks "Connect"
-4. New browser tab/popup opens:
-   a. Platform's OAuth consent page
-   b. Shows permissions Kova is requesting
-   c. User clicks "Authorize" on the platform's page
-5. OAuth callback:
-   a. Platform redirects back to Kova
-   b. Kova exchanges auth code for access token
-   c. Token stored securely (encrypted in DB)
-6. Tab/popup closes
-7. Platform card updates:
-   a. Smooth transition from "Available" to "Connected"
-   b. Shows account info (@username, channel name)
-   c. Success toast: "X / Twitter connected successfully"
-8. Platform now available in Pipeline Builder deploy step
-```
-
-### 6.7 Reviewing and Publishing Multi-Format Content
-
-```
-1. Pipeline generates multiple formats (fan-out):
-   Thread + LinkedIn post + Newsletter + Video script
-2. Pipeline pauses at Human Review gate
-3. User opens Review screen
-4. Format tabs at top: [Thread] [LinkedIn] [Newsletter] [Video Script]
-5. User reviews Thread tab:
-   a. 12 post cards displayed
-   b. User reads through, edits post 3 (adjusts wording)
-   c. Character counter stays green (under 280)
-6. User switches to LinkedIn tab:
-   a. Single post with professional formatting
-   b. User approves as-is (no edits)
-7. User switches to Newsletter tab:
-   a. Email-formatted content with sections
-   b. User edits the subject line
-8. User switches to Video Script tab:
-   a. Scene-by-scene layout
-   b. User approves as-is
-9. Bulk action: User clicks "Approve All"
-   (or individually approves each tab)
-10. Pipeline resumes:
-    a. Thread deploys to X
-    b. LinkedIn post deploys to LinkedIn (if connected)
-    c. Newsletter queued for email send (if connected)
-    d. Video script saved to Content Library for manual use
-11. Confirmation: "4 pieces of content approved. Publishing to 2 platforms."
-```
-
----
-
-## 7. Design Patterns & Components
-
-### 7.1 Card Patterns
-
-**Pipeline Card (used in Pipeline List, Dashboard)**
-
-```
-+-------------------------------------------+
-| [Icon] Pipeline Name          [Status dot] |
-| Template: Topic to Everything              |
-| Last run: 2 hours ago -- Completed         |
-| Style: "Sarah's Tech Voice"               |
-|                                            |
-| [5 format icons]  [3 platform icons]       |
-|                          [Run] [Edit] [...] |
-+-------------------------------------------+
-```
-
-- Fixed height: 180px
-- Status dot: green (active/completed), amber (scheduled), gray (draft)
-- Format icons: small (16px) icons for each output format
-- Platform icons: small (16px) logos for each deploy target
-- Actions: "Run" (primary), "Edit" (secondary), overflow menu (Duplicate, Delete, View Runs)
-
-**Content Card (used in Content Library)**
-
-```
-+-------------------------------------------+
-| [Format icon]  Thread -- 12 posts          |
-| "Why most developers waste time on         |
-|  premature optimization..."                |
-|                                            |
-| Published to X -- 2 hours ago              |
-| From: "My Weekly Thread Pipeline"          |
-|                          [View] [Export]    |
-+-------------------------------------------+
-```
-
-- Fixed height: 160px
-- Format icon: 24px, colored by format type
-- Content preview: 2 lines, truncated with ellipsis
-- Status line: deployment status + timestamp
-- Source: which pipeline generated this
-
-**Style Card (used in Style Library)**
-
-```
-+-------------------------------------------+
-| "Sarah's Tech Voice"                       |
-|                                            |
-| Tone: Casual authority                     |
-| Hook: Personal story + bold claim          |
-| Rhythm: Short, punchy, then longer         |
-|                                            |
-| [URL icon] -- Used 47 times               |
-|                          [Apply] [Edit]    |
-+-------------------------------------------+
-```
-
-- Fixed height: 180px
-- Name: text-lg, bold
-- Top 3 attributes: text-sm, secondary color
-- Source icon + usage count: text-xs, tertiary color
-
-**Trend Topic Card (used in Trend Explorer)**
-
-```
-+-------------------------------------------+
-| 1. "AI-powered developer tools"  [Rising]  |
-|    Reddit + YouTube + Google Trends         |
-|    Score: 87/100                            |
-|              [Create Content] [Save Topic]  |
-+-------------------------------------------+
-```
-
-- List item style (no card border, horizontal dividers)
-- Rank number: text-lg, bold, brand color
-- Topic: text-base, bold
-- Lifecycle badge: colored pill
-- Sources: small platform icons
-- Actions: text buttons
-
-### 7.2 Status Indicators
-
-**Pipeline Run States:**
-
-| State | Color | Icon | Badge Text |
-|---|---|---|---|
-| Pending | Gray | Clock | Pending |
-| Running | Blue | Animated spinner | Running |
-| Waiting for Approval | Amber | User + clock | Needs Review |
-| Completed | Green | Checkmark | Completed |
-| Partially Completed | Amber | Warning triangle | Partial |
-| Failed | Red | X circle | Failed |
-| Cancelled | Gray | Slash circle | Cancelled |
-
-**Step States (within a pipeline run):**
-
-| State | Icon | Style |
-|---|---|---|
-| Waiting | Hollow circle | Gray, text-tertiary |
-| Running | Filled spinner (animated) | Blue, text-primary |
-| Completed | Filled checkmark | Green, text-primary |
-| Failed | Filled X | Red, text-primary |
-| Skipped | Dash | Gray, text-tertiary |
-| Human gate (waiting) | User icon (animated pulse) | Amber, text-primary |
-
-**Platform Connection States:**
-
-| State | Visual |
-|---|---|
-| Connected | Green dot + "Connected" label |
-| Not connected | Gray outline + "Connect" button |
-| Token expired | Amber warning + "Reconnect" button |
-| Connecting (OAuth in progress) | Spinner + "Connecting..." label |
-
-### 7.3 Progress Visualization
-
-**Step progress bar:**
-- Thin (4px height) horizontal bar inside the step card
-- Fills left to right with brand color
-- Percentage label to the right: "62%"
-- Estimated time remaining below: "~45s remaining"
-- Indeterminate state: animated shimmer effect (for steps where progress percentage is unknown)
-
-**Pipeline overall progress:**
-- In the Run View header: "Step 3 of 6"
-- Segmented progress bar: 6 segments, first 2 filled (green), third partially filled (blue, animated), remaining empty (gray)
-- On Dashboard run cards: single progress bar showing overall percentage
-
-### 7.4 Review / Approval Patterns
-
-**Review item card:**
-```
-+-------------------------------------------+
-| [Thread icon]  Thread Draft                |
-| "Why most developers waste time..."        |
-| Pipeline: My Weekly Thread -- Waiting 2h   |
-|                          [Review]          |
-+-------------------------------------------+
-```
-
-**Approval actions (sticky bar at bottom of review screen):**
-```
-+-----------------------------------------------------------+
-| [Reject with Feedback]     [Skip]     [Approve & Continue] |
-+-----------------------------------------------------------+
-```
-
-- Reject: Red outline button, left-aligned. Opens feedback textarea inline.
-- Skip: Neutral button, center. No confirmation needed.
-- Approve: Brand color filled button, right-aligned. Primary action, largest.
-
-**Bulk approval (when reviewing multiple formats):**
-```
-+-----------------------------------------------------------+
-| Selected: 3 of 4 formats     [Approve Selected] [Approve All] |
-+-----------------------------------------------------------+
-```
-
-### 7.5 Multi-Format Preview Patterns
-
-Each content format has a dedicated preview component that visually resembles the target platform:
-
-**Thread preview:**
-- Vertical stack of post cards
-- Each card shows: post number, text content, character count
-- Visual style mimics X/Twitter: rounded avatar placeholder, @username, post text
-- Edit mode: text becomes an editable textarea within each card
-
-**LinkedIn post preview:**
-- Single card with LinkedIn-style layout: avatar, name, headline, post text
-- Shows character count
-- Edit mode: textarea replaces text
-
-**Newsletter preview:**
-- Email-style layout: header, sections with headings, body text, CTA buttons
-- Shows approximate email width (600px max)
-- Edit mode: each section becomes editable
-
-**Video script preview:**
-- Two-column table layout: "Visual / On Screen" left, "Audio / Narration" right
-- Scene dividers between sections
-- Includes chapter markers
-- Edit mode: each cell becomes editable
-
-**Carousel preview:**
-- Horizontal scroll of slide cards
-- Each slide shows text content in a visual frame
-- Slide counter: "Slide 3 of 8"
-- Edit mode: each slide's text is editable
-
-### 7.6 Style Profile Visualization
-
-**Compact view (in dropdowns, pipeline settings):**
-```
-"Sarah's Top Thread Structure"
-Hook: Personal story + bold claim | Structure: 12-post arc | Pacing: One idea per post
-```
-
-**Card view (in Style Library):** See Section 7.1 Style Card.
-
-**Full view (in Style Profile Detail):** See Section 5.6.
-
-**Attribute badge:**
-```
-+-- Tone ---------------------------+
-| Casual authority -- conversational |
-| but confident                      |
-+------------------------------------+
-```
-- Label: text-xs, uppercase, secondary color, top of block
-- Value: text-sm, primary color, below label
-- Edit button: icon-only, positioned at top-right of block
-
-### 7.7 Platform Connection Cards
-
-See Section 5.9 for full layout. Summary pattern:
-
-**Connected:** Platform logo (color) + account info + "Connected" badge + "Disconnect" action
-**Available:** Platform logo (muted) + description + "Connect" button
-**Coming soon:** Platform logo (muted) + "Coming soon" label, no action
-
-### 7.8 Notification Patterns
-
-**In-app notification bell:**
-- Icon with red unread count badge (number)
-- Dropdown list of recent notifications
-- Each notification: icon + message + timestamp + link
-- "Mark all read" action
-- Max 20 items in dropdown, "View all" link for full page
-
-**Notification types:**
-
-| Type | Icon | Example Message | Link Target |
-|---|---|---|---|
-| Review needed | User icon | "Thread draft ready for review" | Review Detail |
-| Pipeline completed | Checkmark | "Pipeline 'Weekly Thread' completed" | Pipeline Run View |
-| Pipeline failed | Warning | "Pipeline 'Blog to Social' failed at Script Writing" | Pipeline Run View |
-| Content published | Rocket | "Thread published to X" | Content Library |
-| Scheduled run complete | Calendar + check | "Daily content: 3 pieces generated" | Dashboard |
-| Platform disconnected | Warning | "X/Twitter connection expired" | Settings > Platforms |
-
-**Toast notifications:**
-- Appear bottom-right (desktop) or top-center (mobile)
-- Auto-dismiss after 5 seconds
-- Manual dismiss via X button
-- Types: success (green left border), error (red), info (blue), warning (amber)
-- Max 3 visible simultaneously; older toasts push up
-
----
-
-## 8. Progressive Disclosure Strategy
-
-### 8.1 User Maturity Model
-
-The interface adapts based on usage metrics tracked in the background. These are not "levels" shown to the user -- the interface simply reveals more as the user demonstrates familiarity.
-
-| Maturity | Criteria | What Changes |
-|---|---|---|
-| **New** | 0 pipeline runs | Onboarding flow, simplified Dashboard, template-first pipeline builder |
-| **Beginner** | 1-5 pipeline runs | Full Dashboard sections visible, all pipeline builder steps available, basic settings |
-| **Intermediate** | 6-20 pipeline runs | AI model settings visible, advanced step configuration expanded by default, pipeline history |
-| **Advanced** | 20+ pipeline runs, or user opens advanced settings | Full configuration exposed, keyboard shortcuts mentioned, bulk operations available |
-
-### 8.2 Specific Disclosure Mechanics
-
-**Pipeline Builder:**
-- New users: Step 2 (Steps) shows a simplified view -- step names with brief descriptions, no expanded configuration.
-- After 5 runs: Step configuration expands by default, showing all options.
-- AI Model dropdown: hidden until user visits Settings > AI Models or has 10+ runs.
-
-**Dashboard:**
-- New users: Single onboarding card.
-- After first run: Pending Reviews + Recent Runs + Quick Start.
-- After 5 runs: Full dashboard with Trending Topics section.
-
-**Settings:**
-- New users: Only Platforms and Brand visible.
-- After 3 runs: AI Models and Defaults sections appear.
-- AI Models: Simple dropdown with "(Recommended)" labels. No technical details unless user clicks "Learn more."
+## F5. Style Library + Style Profile Creator
+
+### Purpose
+
+Enable users to build a personal library of content composition patterns by extracting structural attributes from reference content. This is the product's primary differentiator.
+
+### User Stories
+
+- As a content creator, I want to provide a URL to a viral thread and extract its structure, so that I can apply that pattern to future content.
+- As a power user, I want to edit extracted attributes manually, so that I can fine-tune the composition pattern.
+- As a pipeline user, I want to apply a saved style profile with one click, so that my content follows a consistent structure.
+- As a user validating a style, I want to preview a sample output before saving, so that I can confirm the extraction is accurate.
+
+### Key Interactions
+
+**Style Library (`/styles`):**
+1. View all saved styles in a card grid
+2. Search by name, filter by source type, sort by recent/most-used/alphabetical
+3. Each card shows: name, source type badge, top 3 extracted attributes, usage count
+4. Card actions: "Apply" (to a pipeline) and "Edit" (open detail page)
+
+**Style Creator (`/styles/new`) -- Three-phase flow:**
+
+Phase 1 - Input:
+1. Select input type via tabs: URL / Text / File
+2. Enter/paste/upload content
+3. Click "Analyze Style"
+
+Phase 2 - Analyzing:
+1. See progress with step indicators (Fetching content... done. Extracting patterns... 72%)
+2. Progress bar fills
+3. Duration estimate shown ("This usually takes 10-30 seconds")
+
+Phase 3 - Result:
+1. See source info card (URL, content type detected)
+2. See all extracted attributes with labels and values
+3. Enter a name for the profile
+4. Click "Generate Preview" to see sample content using this style
+5. Review preview. If unsatisfactory, edit attributes and regenerate.
+6. Click "Save Profile"
+
+**Style Detail (`/styles/[id]`):**
+1. View all extracted attributes
+2. Edit any attribute inline (click Edit, modify textarea, save)
+3. Generate preview with current attributes
+4. See which pipelines use this style
+5. Duplicate or delete the profile
+
+### States
 
 **Style Library:**
-- New users: Prominent "Create Your First Style" CTA.
-- After first style: Normal library view with "Create New" button (standard sizing).
-- Multi-reference compositing: post-MVP. For MVP, each profile has one source.
 
-### 8.3 "Show More" Patterns
+| State | Display |
+|-------|---------|
+| **Empty (no styles)** | `EmptyState` explaining what styles are and how they differ from brands. CTA: "Create Your First Style" |
+| **Populated** | Card grid with search + filters |
+| **No search results** | Search icon + "No styles found" + "Try adjusting your search or filters" |
+| **Loading** | `StyleLibrarySkeleton` |
 
-Used within screens to hide secondary options:
+**Style Creator:**
 
-- **Pipeline Builder, Step Configuration:** Each step shows 2-3 key settings by default. "More options" link reveals additional settings (AI model for this step, advanced parameters).
-- **Style Profile Detail:** First 5 attributes (Hook, Tone, Rhythm, Structure, Formatting) shown expanded. Remaining 5 collapsed under "Show all attributes."
-- **Content Card in Library:** Shows preview + status. "Show details" expands to show full metadata (pipeline, style used, all platform deployments).
-- **Settings pages:** Each section shows essential fields. "Advanced" toggle reveals additional options within that section.
+| State | Display |
+|-------|---------|
+| **Input phase** | Tab selector + input field + "Analyze Style" button (disabled until input provided) |
+| **Analyzing** | Centered loader with step-by-step progress |
+| **Result** | Two-column layout: source info + extracted attributes. Preview section below. |
+| **Preview loading** | Sparkles icon with spinner in preview area |
+| **Preview loaded** | Sample content displayed in bordered area |
 
-### 8.4 Smart Defaults
+### Micro-interactions
 
-Every configurable option has a sensible default so that users can complete any flow by making zero choices beyond the minimum required input:
+- **Tab switch:** Input field clears and changes to the appropriate input type
+- **Analyze button:** Transitions to analyzing phase with smooth fade
+- **Analysis progress:** Steps complete one by one with checkmarks
+- **Preview generation:** Sparkles/RefreshCw icon with loading state
+- **Attribute edit:** Click "Edit" reveals textarea inline. Save/Cancel buttons appear below.
+- **Save profile:** Success notification. Redirect to style library.
 
-| Configuration | Default | Why |
-|---|---|---|
-| Pipeline template | "Topic to Everything" (first template) | Most common starting workflow |
-| Output formats | Thread + LinkedIn Post + Newsletter | Three most popular formats |
-| Approval mode | Review before publish | Safe default for new users |
-| Style profile | None (uses Brand settings) | Style is optional, not required |
-| AI model | Claude Sonnet | Best quality for creative writing |
-| Schedule | Run once (no schedule) | Manual control until user opts into automation |
-| Deploy platforms | Export only (no auto-publish) | Safe until user explicitly connects and enables |
+### Accessibility
 
----
-
-## 9. Mobile Strategy
-
-### 9.1 Priority Tiers
-
-| Tier | Screens | Mobile Experience | Rationale |
-|---|---|---|---|
-| **Must work well** | Dashboard, Review Queue, Review Detail, Notifications | Fully optimized, native-feeling | Users check reviews and approve on mobile frequently |
-| **Should work** | Pipeline Run View, Content Library, Style Library, Trend Explorer | Functional, readable, key actions available | Users monitor runs and browse content on mobile |
-| **Desktop-preferred** | Pipeline Builder, Settings, Style Creation | Functional but simplified; may redirect to desktop for complex tasks | Configuration tasks benefit from larger screens |
-
-### 9.2 Mobile-Specific Adaptations
-
-**Bottom Tab Bar:**
-5 tabs: Dashboard, Pipelines, [+] (new/quick actions), Review (with badge), More (opens Styles, Content, Trends, Settings)
-
-**Swipe gestures:**
-- Review cards: swipe right to approve, swipe left to reject (with haptic feedback)
-- Content cards: swipe left to reveal "Export" and "Delete" actions
-
-**Bottom sheets (instead of dropdowns on mobile):**
-- Filter options
-- Style profile selector
-- Format selector
-- Platform selector
-
-**Pull-to-refresh:**
-- Dashboard, Pipeline List, Review Queue, Content Library
-
-### 9.3 Responsive Breakpoints
-
-| Breakpoint | Width | Layout Changes |
-|---|---|---|
-| Mobile | < 768px | Bottom tab bar, single column, full-screen panels, bottom sheets |
-| Tablet | 768px - 1023px | Sidebar collapses by default, 2-column grids, modals instead of side panels |
-| Desktop | 1024px - 1439px | Full sidebar, 3-column grids, side-by-side panels |
-| Wide | 1440px+ | Content area max-width 1200px, centered with increased margins |
-
-### 9.4 Touch Targets
-
-All interactive elements: minimum 44x44pt tap target. Spacing between adjacent targets: minimum 8px. Primary action buttons: minimum 48x48pt.
+- Tabs: standard Radix UI tabs with keyboard navigation (Arrow keys)
+- File upload: `aria-label="Upload file"` on the hidden input
+- Analysis progress: `aria-live="polite"` container, each completed step announced
+- Extracted attributes: semantic heading structure (attribute label as term, value as definition)
+- Preview area: `aria-label="Style preview output"`
+- Edit mode: textarea has label association, save/cancel keyboard-accessible
 
 ---
 
-## 10. Accessibility
+## F6. Brand Library + Brand Editor
 
-### 10.1 Compliance Target
+### Purpose
 
-WCAG 2.1 Level AA compliance across all screens. This is a baseline, not a ceiling.
+Manage multiple brand identities that define voice, tone, vocabulary, and platform connections. Brands determine who is speaking; styles determine how the content is structured.
 
-### 10.2 Color Contrast
+### User Stories
 
-| Element | Minimum Ratio | Standard |
-|---|---|---|
-| Body text on background | 4.5:1 | WCAG AA |
-| Large text (18px+ or 14px+ bold) on background | 3:1 | WCAG AA |
-| UI components (buttons, inputs, icons) against adjacent colors | 3:1 | WCAG AA |
-| Status indicators | Must not rely on color alone | WCAG 1.4.1 |
+- As a solo creator, I want to create a brand with my voice and tone, so that all generated content sounds like me.
+- As an agency user, I want to manage multiple client brands, so that I can switch between them per pipeline.
+- As a brand owner, I want to connect my platform accounts to a brand, so that content publishes to the right accounts.
+- As a user with multiple brands, I want to set a default brand, so that I do not have to select it every time.
 
-**Status indicators always include:**
-- Color (green/red/amber/blue)
-- Icon (checkmark, X, warning, spinner)
-- Text label ("Completed," "Failed," "Running")
+### Key Interactions
 
-Never use color as the sole differentiator.
+**Brand Library (`/brands`):**
+1. View all brands in a card grid
+2. Search by name, sort by recent/most-used/alphabetical
+3. Each card shows: name, default badge (if applicable), description, connected platform icons, pipeline count
+4. Card overflow menu: Edit, Duplicate, Set as Default, Delete
 
-### 10.3 Keyboard Navigation
+**Brand Editor (`/brands/new` and `/brands/[id]`):**
+1. **Identity section:** Brand name, description, voice and tone, target audience, perspective (select dropdown)
+2. **Vocabulary section:** Words to use (textarea), words to avoid (textarea), emoji usage (radio pill group), content guidelines (textarea)
+3. **Connected platforms section:** List of connected accounts with platform icon. "Link Platform Account" button.
+4. **Bottom action bar:** Cancel (back to library) + Save
 
-**All interactive elements** are reachable via Tab key in a logical order (top-to-bottom, left-to-right).
+### States
 
-**Focus indicators:** Visible 2px outline in brand color around focused elements. Never suppressed.
+**Brand Library:**
 
-**Keyboard shortcuts (desktop):**
+| State | Display |
+|-------|---------|
+| **Empty** | `EmptyState` explaining what brands are. CTA: "Create Your First Brand" |
+| **Populated** | Card grid with search + sort |
+| **No search results** | "No brands found" with search icon |
+| **Loading** | `BrandLibrarySkeleton` |
 
-| Shortcut | Action |
-|---|---|
-| `/` | Open global search |
-| `n` | New pipeline (from Dashboard) |
-| `r` | Quick run (from Dashboard) |
-| `Esc` | Close modal, dismiss dropdown, cancel edit |
-| `Enter` | Confirm primary action in modals and forms |
-| `Tab` / `Shift+Tab` | Navigate between form fields |
-| Arrow keys | Navigate within lists, dropdowns, step order |
+**Brand Editor:**
 
-Shortcuts are documented in a "Keyboard Shortcuts" section accessible via `?` key press.
+| State | Display |
+|-------|---------|
+| **Create mode** | Empty form, title "Create New Brand" |
+| **Edit mode** | Pre-populated form, title is brand name, overflow menu with Duplicate/Set as Default/Delete |
+| **Saving** | Save button shows loading state |
+| **Validation error** | Inline error messages below invalid fields |
 
-### 10.4 Screen Reader Support
+### Micro-interactions
 
-**Semantic HTML:** Use proper heading hierarchy (h1 for page title, h2 for sections, h3 for sub-sections). Use `<nav>` for navigation, `<main>` for content, `<aside>` for sidebar.
+- **Emoji usage pills:** Pill-shaped radio buttons with ring highlight on selection
+- **Platform connection:** "Link Platform Account" opens an OAuth flow in a new window. On return, the platform appears in the connected list.
+- **Delete confirmation:** Dialog with brand name, warning about affected pipelines, confirm/cancel
+- **Set as Default:** Current default loses badge, new default gains badge. Optimistic update.
 
-**ARIA labels:**
-- All icon-only buttons have `aria-label` (e.g., "Edit style profile," "Delete pipeline")
-- Status badges have `aria-label` describing the state (e.g., "Pipeline status: running, step 3 of 6")
-- Progress bars have `aria-valuenow`, `aria-valuemin`, `aria-valuemax`
-- Tab panels use `role="tablist"`, `role="tab"`, `role="tabpanel"`
-- Live regions (`aria-live="polite"`) for real-time updates (pipeline progress, notifications)
+### Accessibility
 
-**Form accessibility:**
-- All inputs have associated `<label>` elements
-- Error messages linked via `aria-describedby`
-- Required fields marked with `aria-required="true"`
-- Form validation errors announced via `aria-live` region
-
-### 10.5 Motion Sensitivity
-
-- All animations respect `prefers-reduced-motion` media query
-- When reduced motion is preferred: animations replaced with instant state changes, no parallax, no auto-playing animations
-- SSE progress updates still function; visual transition is simply instant rather than animated
-
-### 10.6 Content Accessibility
-
-- All images (platform logos, format icons) have descriptive `alt` text
-- Generated content previews maintain heading structure for screen readers
-- Carousel previews include "Slide X of Y" announcements
-- Thread previews include "Post X of Y" announcements
+- Form fields: all inputs have associated `<label>` via `FormField` component with `useId()`
+- Emoji usage: `role="radiogroup"` with `aria-label="Emoji usage"`, each option is a radio input
+- Platform list: semantic list items with platform icon having `aria-hidden="true"`
+- Overflow menu: `DropdownMenu` with standard Radix keyboard navigation
+- Delete dialog: focus trap, `role="alertdialog"`, `aria-describedby` for the warning text
 
 ---
 
-## Appendix A: Screen Inventory Summary
+## F7. Content Library
 
-| # | Screen | URL | Primary Action | MVP Priority |
-|---|---|---|---|---|
-| 1 | Dashboard | `/` | Review pending items / Start new pipeline | P0 |
-| 2 | Pipeline List | `/pipelines` | Select a pipeline to run or edit | P0 |
-| 3 | Pipeline Builder | `/pipelines/new`, `/pipelines/:id/edit` | Configure and run a pipeline | P0 |
-| 4 | Pipeline Run View | `/pipelines/:id/runs/:runId` | Monitor progress, access outputs | P0 |
-| 5 | Review Queue | `/review` | Select an item to review | P0 |
-| 6 | Review Detail | `/review/:runId/:stepId` | Approve or reject content | P0 |
-| 7 | Style Library | `/styles` | Browse and manage styles | P0 |
-| 8 | Style Profile Detail | `/styles/:id` | View/edit style attributes | P0 |
-| 9 | Create Style | `/styles/new` | Extract style from reference | P0 |
-| 10 | Content Library | `/content` | Browse and export content | P0 |
-| 11 | Platform Connections | `/settings/platforms` | Connect platform accounts | P0 |
-| 12 | Settings: Brand | `/settings/brand` | Configure brand/voice | P1 |
-| 13 | Settings: AI Models | `/settings/models` | Select AI providers | P2 |
-| 14 | Settings: Defaults | `/settings/defaults` | Configure default behaviors | P1 |
-| 15 | Trend Explorer | `/trends` | Discover trending topics | P1 |
-| 16 | Onboarding Flow | `/onboarding` (steps 1-3) | First-time setup and first run | P0 |
+### Purpose
 
----
+Provide a browsable archive of all content generated by pipelines, with filters for format, platform, and status. Content items link to platform-native analytics for performance tracking.
 
-## Appendix B: State Matrix
+### User Stories
 
-Every screen has these states defined. This matrix ensures no state is forgotten during implementation.
+- As a content creator, I want to see all my published content in one place, so that I can track what has been deployed.
+- As a user, I want to filter content by format and platform, so that I can find specific pieces.
+- As a publisher, I want to export draft content, so that I can post it manually on platforms not yet connected.
+- As a reviewer, I want to see content linked to platform analytics, so that I can check performance.
 
-| Screen | Empty | Loading | Loaded | Error | Partial |
-|---|---|---|---|---|---|
-| Dashboard | Onboarding card | Skeleton sections | Full dashboard | Per-section inline error | Some sections loaded, others error |
-| Pipeline List | "Create your first pipeline" | Skeleton cards | Card grid | Inline error + retry | N/A |
-| Pipeline Builder | Step 2 blank template, "Add first step" | Template card skeletons | Form with data | Inline field validation | Partially filled form (save draft) |
-| Pipeline Run View | N/A (always has step data) | Steps in "waiting" state | Live progress | Failed step with retry | Some steps done, others failed |
-| Review Queue | "All caught up" checkmark | Skeleton list | Review item cards | Inline error + retry | N/A |
-| Review Detail | N/A (always has content) | Skeleton format previews | Editable content | Generation failed, retry button | Some formats loaded, others loading |
-| Style Library | "Create your first style" | Skeleton cards | Card grid | Inline error + retry | N/A |
-| Style Detail | N/A (always has data) | Skeleton attribute blocks | Full attribute view | Profile not found, back link | N/A |
-| Create Style | Clean input form | Extraction progress bar | Extracted attributes | Extraction failed, retry/alt input | N/A |
-| Content Library | "No content yet, run a pipeline" | Skeleton cards | Card grid/list | Inline error + retry | N/A |
-| Platform Connections | All platforms in "Available" state | N/A (static cards) | Mixed connected/available | OAuth failure message | Some connected, some failed |
-| Settings | Default values in all fields | N/A (instant load from cache) | Fields with saved values | Save failed, retry | N/A |
-| Trend Explorer | "No trends for this niche" | Skeleton list | Topic list | Inline error + retry | N/A |
-| Onboarding | Clean input (step 1 default) | Style extraction loading | Step result summary | Extraction error, retry/skip | N/A |
+### Key Interactions
 
----
+1. View all content in a card grid
+2. Search by title
+3. Filter by format (Thread, Post, Newsletter, Video Script, Carousel)
+4. Filter by platform (X, LinkedIn, YouTube, Instagram, Newsletter)
+5. Filter by status (Published, Draft, Scheduled)
+6. Each card shows: format icon, title, platform badge, status, published date, pipeline name
+7. Card actions: View (external link), Export (download), Analytics (link to platform-native dashboard)
 
-## Appendix C: Notification Inventory
+### States
 
-| Event | In-App | Email | Push (Future) | Urgency |
-|---|---|---|---|---|
-| Pipeline completed | Yes | Optional | Optional | Low |
-| Pipeline failed | Yes | Yes | Yes | High |
-| Content ready for review | Yes | Yes | Yes | High |
-| Content published | Yes | Optional | No | Low |
-| Scheduled run completed | Yes | Yes (digest) | No | Low |
-| Scheduled run failed | Yes | Yes | Yes | High |
-| Platform token expired | Yes | Yes | No | Medium |
-| Style profile created | Yes (toast) | No | No | Low |
+| State | Display |
+|-------|---------|
+| **Empty** | `EmptyState`: "No content yet. Content appears here after your pipelines generate it." CTA: "Go to Pipelines" |
+| **Populated** | Card grid with search + filters |
+| **No results** | "No content found" with filter adjustment suggestion |
+| **Loading** | Skeleton cards matching content card layout |
+
+### Micro-interactions
+
+- **Filter change:** Grid re-renders immediately (client-side filtering)
+- **Analytics button:** Opens platform-native analytics in a new tab (safe URL validation via `isSafeUrl()`)
+- **Export button:** Downloads content as a text file
+- **Status color:** Published (green/success), Draft (muted), Scheduled (blue/info)
+
+### Accessibility
+
+- Filter selects: standard Radix `Select` with keyboard navigation
+- Content cards: not linkable (no detail page); actions are explicit buttons
+- External links: `target="_blank"` with `rel="noopener noreferrer"` and "opens in new tab" sr-only text
+- Format icons: `aria-hidden="true"` with format label as visible text beside them
 
 ---
 
-## Appendix D: i18n Considerations
+## F8. Trends Dashboard
 
-All user-facing text must be externalized for internationalization. The MVP supports English and Korean.
+### Purpose
 
-**Text categories requiring translation:**
-- Navigation labels
-- Button labels and CTAs
-- Form field labels and placeholders
-- Empty state messages
-- Error messages
-- Notification messages
-- Onboarding copy
-- Status labels
-- Tooltip text
+Surface trending topics ranked by relevance score, filtered by niche and time range, with a direct action to create content from any topic.
 
-**Text that is NOT translated:**
-- User-generated content (pipeline names, style profile names, content)
-- Platform names (X/Twitter, YouTube, Instagram)
-- AI model names (Claude, GPT-4o)
-- Technical identifiers (URLs, IDs)
+### User Stories
 
-**RTL support:** Not required for MVP (English and Korean are both LTR). Architecture should not preclude future RTL support.
+- As a content creator, I want to see what topics are trending in my niche, so that I can create timely content.
+- As a scheduled pipeline user, I want the system to use trends automatically, so that my daily content is relevant.
+- As a user evaluating a topic, I want to understand its lifecycle stage, so that I know if it is too early, ideal, or too late to create content.
+- As a user, I want to save interesting topics for later, so that I can batch my content creation.
+
+### Key Interactions
+
+1. View ranked list of trending topics (numbered 1 through N)
+2. Filter by niche (All, SaaS, AI/ML, Dev Tools, Content Marketing)
+3. Filter by time range (24h, 3 days, 1 week)
+4. Each topic row shows: rank, topic name, lifecycle badge (Emerging/Rising/Peak/Declining), source badge (Reddit/YouTube/Google Trends), score bar, actions
+5. Actions per topic: "Create Content" (navigate to pipeline builder with topic pre-filled), "Save" (bookmark)
+6. Lifecycle legend at bottom explains what each stage means
+
+### States
+
+| State | Display |
+|-------|---------|
+| **Populated** | Ranked list with all topics |
+| **Filtered empty** | "No trending topics found for this niche" with suggestion to adjust filters |
+| **Loading** | Skeleton rows matching the topic card layout |
+| **Error** | Inline error: "Unable to fetch trend data. Retry." |
+
+### Micro-interactions
+
+- **Score bar:** Filled proportional to score (0-100) using `Progress` component
+- **Lifecycle badge:** Colored dot + label. Emerging = green, Rising = blue, Peak = amber, Declining = grey.
+- **Create Content button:** Navigates to `/pipelines/new` with topic name as source input via URL query parameter
+- **Save button:** Bookmark icon toggles filled/outline state. Saved topics persist.
+
+### Accessibility
+
+- Topic list: uses `Card` per topic for clear boundaries
+- Score bar: `role="progressbar"` with `aria-valuenow`
+- Lifecycle badge: text label included alongside colored dot
+- Action buttons: clear labels, minimum 44px touch targets
+- Lifecycle legend: uses semantic structure with descriptive text
 
 ---
 
-*This document defines the complete UX strategy for Kova. For product features and user journeys, see the Product PRD. For technical architecture, see the Technical PRD. For MVP scope, see the MVP PRD.*
+## F9. Settings
+
+### Purpose
+
+Configure platform connections, AI model preferences, and default pipeline settings in a single organized location.
+
+### User Stories
+
+- As a new user, I want to connect my social media accounts, so that Kova can publish content to them.
+- As a user optimizing costs, I want to choose which AI models to use for each task, so that I can balance quality and expense.
+- As a frequent user, I want to set default brand, style, and approval mode, so that new pipelines start with my preferences.
+- As a user managing notifications, I want to control which events notify me, so that I am not overwhelmed.
+
+### Key Interactions
+
+**Settings shell (`/settings`):**
+- Two-column layout on desktop: left sidebar nav (Platforms, AI Models, Defaults) + right content area
+- Mobile: horizontal scrollable tab bar above content
+
+**Platforms (`/settings/platforms`):**
+1. Connected platforms section: list of connected accounts with platform icon, name, account handle, connection date, permissions, "Disconnect" button
+2. Available platforms section: list of unconnected platforms with description and "Connect" button (or "Coming Soon" badge)
+
+**AI Models (`/settings/models`):**
+1. Per-task model selector: Writing AI, Transcription, Voice Generation, Image Generation
+2. Each row: task icon + label + select dropdown + cost badge
+
+**Defaults (`/settings/defaults`):**
+1. Default brand selector
+2. Default style profile selector
+3. Default approval mode (radio group: autopilot, review before publish, per-platform)
+4. Default output formats (checkbox group: Thread, LinkedIn Post, Newsletter, Video Script, Carousel, Short Video)
+5. Timezone selector
+6. Notification preferences (toggle switches: Pipeline complete, Review needed, Daily digest)
+
+### States
+
+| State | Display |
+|-------|---------|
+| **No platforms connected** | All platforms in "Available" section, no "Connected" section |
+| **Some connected** | Split into Connected + Available sections with separator |
+| **Model selector loading** | Skeleton select triggers |
+| **Defaults saved** | Optimistic update, no explicit save button (auto-save on change). Brief success toast. |
+
+### Micro-interactions
+
+- **Connect button:** Opens OAuth flow in popup. On success, platform moves from Available to Connected with brief fade transition.
+- **Disconnect button:** Confirmation dialog listing affected brands and pipelines before disconnection.
+- **Model select change:** Cost badge updates immediately to reflect the selected model's cost tier.
+- **Toggle switch:** Smooth slide animation with color change.
+- **Auto-save:** Settings persist on each change. Debounced by 500ms to avoid excessive API calls.
+
+### Accessibility
+
+- Settings nav: `role="navigation"`, `aria-label="Settings navigation"`, `aria-current="page"` on active item
+- Platform cards: semantic structure with platform name as the primary label
+- Model selectors: label + select association
+- Toggle switches: `role="switch"`, `aria-checked`, keyboard-toggleable
+- Radio groups: `role="radiogroup"`, `aria-label` on the fieldset
+- Checkbox groups: standard checkbox semantics
+
+---
+
+# Part 3: Page Layouts
+
+Each layout references existing component names from the codebase. Responsive breakpoints follow Tailwind defaults: `sm` (640px), `md` (768px), `lg` (1024px), `xl` (1280px).
+
+---
+
+## P1. `/` Dashboard
+
+### Layout Description
+
+Full-width single-column layout within the `AppLayout` content area (max-width 1200px, centered).
+
+**Regions (top to bottom):**
+1. **Greeting + Stats** -- `GreetingSection`: time-of-day greeting + 3 stat cards in a responsive row
+2. **Reviews + Quick Start** -- Two-column on `lg`+, single column below. Left: `PendingReviews` (expandable list). Right: `QuickStart` (action card, fixed 320px width on desktop).
+3. **Recent Runs** -- `RecentRuns`: horizontal scrollable card row or vertical list
+4. **Trending Topics** -- `TrendingTopics`: pill-shaped topic badges, horizontally scrollable
+
+### Component Hierarchy
+
+```
+DashboardPage (view: /web/src/views/dashboard/ui/dashboard-page.tsx)
++-- GreetingSection (widget: /web/src/widgets/dashboard/ui/greeting-section.tsx)
+|   +-- Card (shared/ui)
+|   +-- CardContent (shared/ui)
+|   +-- stat links to ROUTES.REVIEW, ROUTES.PIPELINES, ROUTES.CONTENT
+|
++-- PendingReviews (widget: /web/src/widgets/dashboard/ui/pending-reviews.tsx)
+|   +-- SectionHeader (shared/ui)
+|   +-- ReviewCard (entity: /web/src/entities/review/ui/review-card.tsx)
+|       +-- FormatIcon (entity: /web/src/entities/review/ui/format-icon.tsx)
+|       +-- Card, CardHeader, CardContent, CardFooter (shared/ui)
+|
++-- QuickStart (widget: /web/src/widgets/dashboard/ui/quick-start.tsx)
+|   +-- Card, CardHeader, CardTitle, CardContent (shared/ui)
+|   +-- Button (shared/ui) x3
+|
++-- RecentRuns (widget: /web/src/widgets/dashboard/ui/recent-runs.tsx)
+|   +-- SectionHeader (shared/ui)
+|   +-- RunStatusBadge (entity: /web/src/entities/pipeline/ui/run-status-badge.tsx)
+|
++-- TrendingTopics (widget: /web/src/widgets/dashboard/ui/trending-topics.tsx)
+    +-- SectionHeader (shared/ui)
+    +-- TrendTopicPill (entity: /web/src/entities/trend/ui/trend-topic-pill.tsx)
+        +-- LifecycleBadge (entity: /web/src/entities/trend/ui/lifecycle-badge.tsx)
+```
+
+### Responsive Behavior
+
+| Breakpoint | Behavior |
+|------------|----------|
+| **Desktop (lg+)** | Stats: 3-column grid. Reviews + QuickStart: side-by-side (flex-row). Recent Runs: card row. Trends: horizontal scroll. |
+| **Tablet (md-lg)** | Stats: 3-column grid. Reviews + QuickStart: stack vertically. Recent Runs: 2 cards per row. Trends: same. |
+| **Mobile (<md)** | Stats: single column. All sections stack. QuickStart: full width. |
+
+### Key States
+
+| State | Visual |
+|-------|--------|
+| **First use (empty)** | `EmptyDashboard` replacing all sections: welcome message + single CTA |
+| **Loading** | `DashboardSkeleton`: 3 skeleton stat cards + skeleton review cards + skeleton run cards |
+| **Populated** | All sections rendered with data |
+| **Error** | Inline error per section. Other sections render normally. |
+
+---
+
+## P2. `/pipelines` Pipeline List
+
+### Layout Description
+
+Standard Library Pattern page: PageHeader + filter bar + card grid.
+
+**Regions:**
+1. **Header** -- `PageHeader` with "Pipelines" title and "New Pipeline" button
+2. **Filter bar** -- Search input + status Select + sort Select
+3. **Card grid** -- Responsive grid of `PipelineCard` components
+4. **Empty state** -- `EmptyState` when no pipelines exist
+
+### Component Hierarchy
+
+```
+PipelinesPage (view: /web/src/views/pipelines/ui/pipelines-page.tsx)
++-- PageHeader (shared/ui)
+|   +-- Button > Link to ROUTES.PIPELINE_NEW
+|
++-- Filter bar (inline)
+|   +-- Input with Search icon prefix (shared/ui)
+|   +-- Select for status filter (shared/ui)
+|   +-- Select for sort (shared/ui)
+|
++-- Card grid
+|   +-- PipelineCard (entity: /web/src/entities/pipeline/ui/pipeline-card.tsx) x N
+|       +-- Card, CardHeader, CardTitle, CardAction, CardContent, CardFooter (shared/ui)
+|       +-- PipelineStatusBadge (entity)
+|
++-- EmptyState (shared/ui) -- when no results
+    +-- Button > Link to ROUTES.PIPELINE_NEW
+```
+
+### Responsive Behavior
+
+| Breakpoint | Grid Columns | Filter Layout |
+|------------|-------------|---------------|
+| **xl+** | 3 columns | Search fills, selects fixed width inline |
+| **md-xl** | 2 columns | Same filter layout |
+| **<md** | 1 column | Search on top, selects on row below (flex-col then flex-row) |
+
+### Key States
+
+| State | Visual |
+|-------|--------|
+| **Empty** | `EmptyState` centered: GitBranch icon + "No pipelines found" + CTA |
+| **Loading** | `PipelineListSkeleton` (widget) |
+| **Populated** | Grid of pipeline cards |
+| **Filtered empty** | Simplified empty: "No pipelines match your filters" |
+
+---
+
+## P3. `/pipelines/new` Pipeline Builder
+
+### Layout Description
+
+Multi-step form with progress indicator. Full-width within content area.
+
+**Regions:**
+1. **Back-link** -- ArrowLeft + "Pipelines"
+2. **Progress indicator** -- `BuilderProgress`: 4-step horizontal stepper (Basics, Steps, Settings, Review)
+3. **Step content area** -- Current step component (changes per step)
+4. **Step navigation** -- Bottom-aligned Back/Next buttons
+
+### Component Hierarchy
+
+```
+PipelineNewPage (view: /web/src/views/pipeline-new/ui/pipeline-new-page.tsx)
++-- Back-link to ROUTES.PIPELINES
++-- BuilderProgress (widget: /web/src/widgets/pipeline-builder/ui/builder-progress.tsx)
+|
++-- Step content (conditionally rendered):
+|   +-- StepBasics (widget: /web/src/widgets/pipeline-builder/ui/step-basics.tsx)
+|   |   +-- Input for pipeline name
+|   |   +-- Template card grid (6 templates)
+|   |   +-- Source type card grid (4 types)
+|   |   +-- Source input field (Input/Textarea/file upload per type)
+|   |
+|   +-- StepSteps (widget: /web/src/widgets/pipeline-builder/ui/step-steps.tsx)
+|   |   +-- Ordered step list with GripVertical + number + category icon + name + reorder/expand/remove buttons
+|   |   +-- StepConfigFields (inline, per step)
+|   |   +-- Popover with categorized step menu (Add Step)
+|   |
+|   +-- StepSettings (widget: /web/src/widgets/pipeline-builder/ui/step-settings.tsx)
+|   |   +-- Brand Select
+|   |   +-- Style Profile Select
+|   |   +-- Trigger radio cards (once/schedule)
+|   |   +-- Schedule config (frequency Select + time Input)
+|   |   +-- Approval mode radio cards
+|   |
+|   +-- StepReview (widget: /web/src/widgets/pipeline-builder/ui/step-review.tsx)
+|       +-- Summary Card with all configured values
+|       +-- Action buttons: "Save as Draft" + "Save & Run"
+|
++-- Bottom navigation buttons (Back / Next)
+```
+
+### Responsive Behavior
+
+| Breakpoint | Behavior |
+|------------|----------|
+| **lg+** | Template grid: 3 columns. Source types: 4 columns. Steps: full width. Settings: comfortable spacing. |
+| **md-lg** | Template grid: 2 columns. Source types: 4 columns. |
+| **<md** | Template grid: 2 columns. Source types: 2 columns. Steps: full width, slightly tighter. |
+
+### Key States
+
+| State | Visual |
+|-------|--------|
+| **Step 1 initial** | Template grid unselected, name empty, Next disabled |
+| **Step 2 empty (blank template)** | Layers icon + "No steps yet" + Add Step button |
+| **Step 2 populated** | Ordered list of steps |
+| **Step 3 schedule mode** | Additional schedule/approval fields visible |
+| **Step 4 review** | Read-only summary + action buttons |
+
+---
+
+## P4. `/pipelines/[id]` Pipeline Detail
+
+### Layout Description
+
+Detail page with back-link, header with actions, info card, and run history section.
+
+**Regions:**
+1. **Back-link** -- ArrowLeft + "Pipelines"
+2. **Header** -- Pipeline name + `PipelineStatusBadge` + Edit and Run buttons
+3. **Info card** -- Description, template badge, schedule info, created date, steps list
+4. **Run History** -- `SectionHeader` + list of run cards (or empty state)
+
+### Component Hierarchy
+
+```
+PipelineDetailPage (view: /web/src/views/pipeline-detail/ui/pipeline-detail-page.tsx)
++-- Back-link to ROUTES.PIPELINES
++-- Header
+|   +-- h1 pipeline name
+|   +-- PipelineStatusBadge (entity)
+|   +-- Button "Edit" > Link to pipeline detail
+|   +-- Button "Run"
+|
++-- Info Card
+|   +-- Card, CardContent (shared/ui)
+|   +-- Description paragraph
+|   +-- Separator
+|   +-- Metadata grid (template Badge, schedule, created date)
+|   +-- Separator
+|   +-- Steps ordered list
+|
++-- Run History section
+    +-- SectionHeader (shared/ui)
+    +-- Run cards (each links to ROUTES.PIPELINE_RUN)
+    |   +-- Card, CardContent (shared/ui)
+    |   +-- RunStatusBadge (entity)
+    |   +-- Run ID, timestamp, trigger type, step count, duration
+    +-- Empty state if no runs
+```
+
+### Responsive Behavior
+
+| Breakpoint | Behavior |
+|------------|----------|
+| **lg+** | Metadata grid: 3 columns. Run cards: full width horizontal. |
+| **sm-lg** | Metadata grid: 2 columns. |
+| **<sm** | Metadata: single column. Header: title above, buttons below. |
+
+### Key States
+
+| State | Visual |
+|-------|--------|
+| **Not found** | "Pipeline not found" centered + back button |
+| **No runs** | Play icon + "No runs yet" inline empty state |
+| **With runs** | List of run cards sorted by most recent |
+| **Loading** | Skeleton for info card + skeleton run list |
+
+---
+
+## P5. `/pipelines/[id]/runs/[runId]` Run Detail
+
+### Layout Description
+
+Status Timeline Pattern page with header, status banners, and vertical timeline.
+
+**Regions:**
+1. **Back-link** -- ArrowLeft + pipeline name
+2. **Header** -- "Run: {pipelineName}" + `RunStatusBadge` + step counter + action buttons (Pause/Cancel/Retry)
+3. **Status banner** -- Conditional: completed (green), failed (red), or absent
+4. **Timeline card** -- Vertical timeline of steps with status icons, progress bars, outputs, branches
+
+### Component Hierarchy
+
+```
+PipelineRunPage (view: /web/src/views/pipeline-run/ui/pipeline-run-page.tsx)
++-- Back-link to ROUTES.PIPELINE_DETAIL
++-- Header
+|   +-- h1 "Run: {pipelineName}"
+|   +-- RunStatusBadge (entity)
+|   +-- Step counter "Step N of M"
+|   +-- Action buttons (Pause, Cancel, Retry)
+|
++-- Status banner (conditional)
+|   +-- Completed: Card with success bg, CheckCircle2, "All content generated", link to Content Library
+|   +-- Failed: Card with error bg, XCircle, failed step name + error, Retry/Skip buttons
+|
++-- Timeline Card
+    +-- Card, CardContent (shared/ui)
+    +-- Steps: vertical timeline
+        +-- Per step: status icon + connector line + step name + duration/progress/output
+        +-- Per branch (fan-out): indented GitBranch icon + status icon + branch name
+```
+
+### Responsive Behavior
+
+| Breakpoint | Behavior |
+|------------|----------|
+| **sm+** | Header: title left, buttons right. Status banner: horizontal layout. |
+| **<sm** | Header: stack vertically. Status banner: stack vertically. Timeline: same (inherently single-column). |
+
+### Key States
+
+| State | Visual |
+|-------|--------|
+| **Running** | Spinner on active step, progress bar visible. Pause/Cancel in header. |
+| **Waiting for review** | User icon on waiting step. |
+| **Completed** | Green banner. All checkmarks. No action buttons. |
+| **Failed** | Red banner with error details. Retry/Skip buttons. |
+| **Not found** | "Run not found" + back button |
+
+---
+
+## P6. `/review` Review Queue
+
+### Layout Description
+
+Filterable list with status tabs, sort control, optional selection mode, and bulk action toolbar.
+
+**Regions:**
+1. **Header** -- `PageHeader` with "Review Queue" title (no primary action button)
+2. **Controls** -- Status tabs (All, Pending, Approved, Rejected) + Select mode button + sort dropdown
+3. **Bulk action toolbar** -- Conditional: appears when selection mode is active
+4. **Item count** -- "{N} items" text
+5. **Review list** -- Vertical stack of `ReviewCard` components
+
+### Component Hierarchy
+
+```
+ReviewPage (view: /web/src/views/review/ui/review-page.tsx)
++-- PageHeader (shared/ui) -- title only, no action
+|
++-- Controls row
+|   +-- Tabs > TabsList > TabsTrigger x4 (shared/ui)
+|   +-- Button "Select" (enters selection mode)
+|   +-- Select for sort order (shared/ui)
+|
++-- Bulk action toolbar (conditional)
+|   +-- "{N} selected" counter
+|   +-- Button "Select All Pending"
+|   +-- Button "Approve Selected"
+|   +-- Button "Reject Selected"
+|   +-- Button "Cancel" (exit selection mode)
+|
++-- Item count paragraph
+|
++-- Review list
+|   +-- ReviewCard (entity: /web/src/entities/review/ui/review-card.tsx) x N
+|       +-- Checkbox (when selectable)
+|       +-- FormatIcon (entity)
+|       +-- Card with warning left-border
+|
++-- EmptyState (shared/ui) -- when no items
+```
+
+### Responsive Behavior
+
+| Breakpoint | Behavior |
+|------------|----------|
+| **sm+** | Controls: tabs left, buttons right (same row). Bulk toolbar: single row. |
+| **<sm** | Controls: tabs on top row, buttons below. Bulk toolbar: wraps to two rows. |
+
+### Key States
+
+| State | Visual |
+|-------|--------|
+| **Empty** | `EmptyState` with CheckSquare icon: "No items to review" |
+| **Populated** | List of review cards with warning border |
+| **Selection mode** | Checkboxes on each card. Toolbar visible at top of list. |
+| **Filtered empty** | "No items match your filters" |
+
+---
+
+## P7. `/review/[runId]/[stepId]` Review Detail
+
+### Layout Description
+
+Two-column layout with context panel (left) and output panel (right). Sticky action bar at bottom.
+
+**Regions:**
+1. **Header** -- Pipeline name + status badge + step name
+2. **Two-column body** -- Context panel (35% on lg, full-width on mobile) + Output panel (65% on lg, full-width on mobile)
+3. **Sticky action bar** -- Fixed to bottom: Reject / Skip / Approve buttons
+
+### Component Hierarchy
+
+```
+ReviewDetailPage (view: /web/src/views/review-detail/ui/review-detail-page.tsx)
++-- Header
+|   +-- h1 pipeline name
+|   +-- Badge status
+|   +-- Step name subtitle
+|
++-- Two-column layout (flex-col lg:flex-row)
+|   +-- Context Panel (lg:w-[35%])
+|   |   +-- Card "Context"
+|   |       +-- Source info (type badge + content preview)
+|   |       +-- Style Profile summary (name, tone, hook pattern, rhythm)
+|   |       +-- Previous Step Output (expandable with ChevronDown/Up)
+|   |
+|   +-- Output Panel (flex-1 lg:w-[65%])
+|       +-- Section header "Generated Thread" + post count
+|       +-- Post cards x N
+|           +-- Card (shared/ui)
+|           +-- Post number label
+|           +-- Textarea (editable)
+|           +-- Character count (red when over 280)
+|
++-- Sticky action bar
+    +-- Button "Reject with Feedback" (destructive outline)
+    +-- Button "Skip" (ghost)
+    +-- Button "Approve & Continue" (default/primary)
+```
+
+### Responsive Behavior
+
+| Breakpoint | Behavior |
+|------------|----------|
+| **lg+** | Two columns side-by-side. Context: 35% width. Output: 65% width. |
+| **<lg** | Single column. Context panel on top (collapsible). Output below. Action bar full-width. |
+
+### Key States
+
+| State | Visual |
+|-------|--------|
+| **Loaded** | Full two-column layout with editable output |
+| **Editing** | Character counts update live |
+| **Over limit** | Character count in red (`text-destructive`) |
+| **Approving** | Approve button shows loading spinner |
+| **Rejecting** | Feedback textarea expands below output |
+
+---
+
+## P8. `/styles` Style Library
+
+### Layout Description
+
+Standard Library Pattern: PageHeader + filter bar + card grid.
+
+**Regions:**
+1. **Header** -- `PageHeader` with "Style Library" + "Create New Style" button
+2. **Filter bar** -- Search input + source type Select + sort Select
+3. **Card grid** -- Responsive grid of `StyleCard` components
+4. **Empty state** -- `EmptyState` for zero styles, or no-results state for empty filter
+
+### Component Hierarchy
+
+```
+StylesPage (view: /web/src/views/styles/ui/styles-page.tsx)
++-- PageHeader (shared/ui)
+|   +-- Button > Link to ROUTES.STYLE_NEW
+|
++-- Filter bar
+|   +-- Input with Search prefix
+|   +-- Select source type (All, URL, Text, Audio, Video, Image)
+|   +-- Select sort (Recent, Most Used, Alphabetical)
+|
++-- Card grid
+|   +-- StyleCard (entity: /web/src/entities/style/ui/style-card.tsx) x N
+|       +-- Card (shared/ui)
+|       +-- Source type Badge
+|       +-- StyleAttributeBadge (entity) x3
+|       +-- Usage count
+|       +-- Apply + Edit buttons in footer
+|
++-- EmptyState (shared/ui) or no-results state
+```
+
+### Responsive Behavior
+
+Same as Pipeline List: 3 columns (xl), 2 columns (md), 1 column (mobile).
+
+### Key States
+
+Same as Pipeline List with style-specific empty state messaging.
+
+---
+
+## P9. `/styles/new` Create Style Profile
+
+### Layout Description
+
+Three-phase flow: Input > Analyzing > Result. Each phase replaces the previous entirely.
+
+**Phase 1 - Input:**
+1. Back-link to Styles
+2. Title: "Create Style Profile"
+3. Tab selector (URL / Text / File)
+4. Input area (varies by tab)
+5. "Analyze Style" button
+
+**Phase 2 - Analyzing:**
+1. Back-link
+2. Centered loading state with step progress
+
+**Phase 3 - Result:**
+1. Back-link
+2. Header with "Style Extracted" + Save button
+3. Two-column: Source Info card (left, narrow) + Extracted Attributes card (right, wide)
+4. Style Preview card (full width)
+5. Bottom Save button
+
+### Component Hierarchy
+
+```
+StyleNewPage (view: /web/src/views/style-new/ui/style-new-page.tsx)
++-- Back-link to ROUTES.STYLES
+|
++-- Phase 1: Input
+|   +-- h1 "Create Style Profile"
+|   +-- Tabs > TabsList > TabsTrigger x3 (URL, Text, File)
+|   +-- TabsContent per tab
+|   |   +-- Input (URL) / Textarea (Text) / File drop zone (File)
+|   +-- Button "Analyze Style"
+|
++-- Phase 2: Analyzing
+|   +-- Loader2 spinner
+|   +-- Progress steps (Fetching done, Extracting in progress)
+|   +-- Progress bar
+|
++-- Phase 3: Result
+    +-- Header + Save button
+    +-- Grid (1fr 2fr on lg)
+    |   +-- Card "Source Info" (URL, content type, name input)
+    |   +-- Card "Extracted Attributes" (list of attribute label-value pairs)
+    +-- Card "Style Preview"
+    |   +-- Preview text area
+    |   +-- Button "Generate Preview" / "Regenerate Preview"
+    +-- Bottom Save button
+```
+
+### Responsive Behavior
+
+| Breakpoint | Behavior |
+|------------|----------|
+| **lg+** | Result phase: two-column grid (source info narrow, attributes wide) |
+| **<lg** | Result phase: single column, source info card on top |
+
+---
+
+## P10. `/styles/[id]` Style Detail
+
+### Layout Description
+
+Detail page with back-link, header with actions, profile summary card, editable attribute cards, preview card, and usage section.
+
+**Regions:**
+1. **Back-link** -- ArrowLeft + "Back to Styles"
+2. **Header** -- Style name + Duplicate/Delete buttons
+3. **Profile Summary** -- Card with source URL, created date, usage count
+4. **Attributes** -- Two-column grid of attribute cards with inline edit capability
+5. **Style Preview** -- Preview generation card
+6. **Usage** -- "Used in Pipelines" list
+
+### Component Hierarchy
+
+```
+StyleDetailPage (view: /web/src/views/style-detail/ui/style-detail-page.tsx)
++-- Back-link to ROUTES.STYLES
++-- Header (name + action buttons)
++-- Card "Profile Summary" (3-col grid: source, created, usage count)
++-- Attributes section
+|   +-- h2 "Style Attributes"
+|   +-- Grid (1 col mobile, 2 col lg)
+|       +-- Card per attribute
+|           +-- Attribute label + Edit button
+|           +-- Attribute value text (or Textarea when editing)
+|           +-- Save/Cancel buttons (when editing)
++-- Card "Style Preview"
+|   +-- Preview text or placeholder
+|   +-- Button "Generate Preview"
++-- Usage section
+    +-- h2 "Used in Pipelines"
+    +-- List of pipeline rows (name + last run time)
+    +-- Or: empty state "Not used in any pipelines"
+```
+
+### Responsive Behavior
+
+| Breakpoint | Behavior |
+|------------|----------|
+| **lg+** | Profile summary: 3-column grid. Attributes: 2-column grid. |
+| **<lg** | Profile summary: single column. Attributes: single column. |
+
+---
+
+## P11. `/brands` Brand Library
+
+### Layout Description
+
+Standard Library Pattern: PageHeader + filter bar + card grid.
+
+Identical structure to Style Library but with brand-specific cards and filter options (no source type filter, just search + sort).
+
+### Component Hierarchy
+
+```
+BrandsPage (view: /web/src/views/brands/ui/brands-page.tsx)
++-- PageHeader (shared/ui) with "Brand Library" + "Create New Brand" button
++-- Filter bar (search + sort)
++-- Card grid
+|   +-- BrandCard (entity: /web/src/entities/brand/ui/brand-card.tsx) x N
+|       +-- Default badge (conditional)
+|       +-- Name, description, platform icons, pipeline count
+|       +-- DropdownMenu (Edit, Duplicate, Set as Default, Delete)
+|       +-- Edit button in footer
++-- EmptyState or no-results
+```
+
+### Responsive Behavior
+
+Same as Pipeline List / Style Library.
+
+---
+
+## P12. `/brands/new` Create Brand
+
+### Layout Description
+
+Single-page form with sectioned layout, centered at max-width 672px (`max-w-2xl`).
+
+**Regions:**
+1. **Back-link** + Title
+2. **Identity section** -- Name, description, voice/tone, target audience, perspective
+3. **Vocabulary section** -- Words to use, words to avoid, emoji usage, content guidelines
+4. **Connected platforms section** -- List of connected accounts + "Link Platform Account" button
+5. **Bottom action bar** -- Cancel + Save buttons
+
+### Component Hierarchy
+
+```
+BrandFormPage (view: /web/src/views/brand-form/ui/brand-form-page.tsx)
++-- Back-link to ROUTES.BRANDS
++-- Header (title + subtitle)
++-- Identity section
+|   +-- SectionHeader "Identity"
+|   +-- FormField x5 (Input, Textarea, Textarea, Textarea, Select)
++-- Vocabulary section
+|   +-- SectionHeader "Vocabulary"
+|   +-- FormField x2 (Textarea for words to use/avoid)
+|   +-- Emoji usage radio pill group
+|   +-- FormField (Textarea for guidelines)
++-- Connected Platforms section
+|   +-- SectionHeader "Connected Platforms"
+|   +-- Platform rows (icon + account name)
+|   +-- Button "Link Platform Account"
++-- Bottom action bar (Cancel + Save)
+```
+
+### Responsive Behavior
+
+Form is always single-column at max-w-2xl. Responsive adjustments are minimal:
+- Emoji pills wrap naturally with `flex-wrap`
+- Bottom action bar stays right-aligned
+
+---
+
+## P13. `/brands/[id]` Brand Detail
+
+### Layout Description
+
+Same layout as Create Brand (`BrandFormPage`), with the `id` prop triggering edit mode. Pre-populated form fields. Overflow menu in header with Duplicate/Set as Default/Delete actions.
+
+### Component Hierarchy
+
+Same as P12 but with `isEdit = true`, populating fields from existing brand data. Title changes from "Create New Brand" to the brand's name.
+
+---
+
+## P14. `/content` Content Library
+
+### Layout Description
+
+Standard Library Pattern with richer filter bar (format, platform, status).
+
+**Regions:**
+1. **Header** -- `PageHeader` with "Content Library" (no create action -- content comes from pipelines)
+2. **Filter bar** -- Search + format Select + platform Select + status Select
+3. **Card grid** -- Responsive grid of `ContentCard` components
+4. **Empty state** -- Directs user to Pipelines to generate content
+
+### Component Hierarchy
+
+```
+ContentPage (view: /web/src/views/content/ui/content-page.tsx)
++-- PageHeader (shared/ui) -- title only, no action
++-- Filter bar
+|   +-- Input with Search prefix
+|   +-- Select format (All, Thread, Post, Newsletter, Video Script, Carousel)
+|   +-- Select platform (All, X, LinkedIn, YouTube, Instagram, Newsletter)
+|   +-- Select status (All, Published, Draft, Scheduled)
++-- Card grid
+|   +-- ContentCard (widget: /web/src/widgets/content-library/ui/content-card.tsx) x N
+|       +-- Format icon + label
+|       +-- Title
+|       +-- Platform Badge + status text
+|       +-- Published date
+|       +-- Pipeline name
+|       +-- Actions: View (ExternalLink), Export (Download), Analytics (BarChart3)
++-- EmptyState directing to Pipelines
+```
+
+### Responsive Behavior
+
+Same as Pipeline List. Filter bar wraps on mobile with each select on its own row.
+
+---
+
+## P15. `/trends` Trends Dashboard
+
+### Layout Description
+
+Ranked list layout with filter controls at top, topic rows in middle, lifecycle legend at bottom.
+
+**Regions:**
+1. **Header** -- `PageHeader` with "Trend Explorer"
+2. **Filter bar** -- Niche Select + time range Select
+3. **Topic list** -- Ranked card rows (each row: rank number + topic name + lifecycle badge + source badge + score bar + action buttons)
+4. **Lifecycle legend** -- Explanatory card at the bottom
+
+### Component Hierarchy
+
+```
+TrendsPage (view: /web/src/views/trends/ui/trends-page.tsx)
++-- PageHeader (shared/ui)
++-- Filter bar
+|   +-- Select niche (All, SaaS, AI/ML, Dev Tools, Content Marketing)
+|   +-- Select time range (24h, 3 days, 1 week)
++-- Topic list
+|   +-- Card per topic
+|       +-- Rank number (text-xl font-bold)
+|       +-- Topic name + LifecycleBadge (entity)
+|       +-- Source Badge
+|       +-- Progress bar (score)
+|       +-- Button "Create Content" > Link to ROUTES.PIPELINE_NEW
+|       +-- Button "Save" (bookmark)
++-- Lifecycle legend Card
+    +-- 4-column grid explaining Emerging, Rising, Peak, Declining
+```
+
+### Responsive Behavior
+
+| Breakpoint | Behavior |
+|------------|----------|
+| **sm+** | Topic rows: horizontal layout with rank, name, badges, score, actions in one row |
+| **<sm** | Topic rows: stack vertically within the card. Name + badge on one row, score + actions below. |
+| **lg+** | Legend: 4-column grid |
+| **<lg** | Legend: 2-column grid |
+
+---
+
+## P16. `/settings/*` Settings
+
+### Layout Description
+
+Shell layout with sub-navigation + content area. Three sub-pages.
+
+**Shell (`/settings`):**
+1. **Header** -- `PageHeader` with "Settings"
+2. **Two-column body (md+)** -- Left: vertical nav list (192px, `w-48`). Right: content area (flex-1).
+3. **Mobile:** Horizontal scrollable tab bar replacing the left nav.
+
+### Component Hierarchy
+
+```
+SettingsLayout (widget: /web/src/widgets/settings/ui/settings-layout.tsx)
++-- PageHeader (shared/ui)
++-- Mobile tabs (ScrollArea with nav links)
++-- Desktop two-column
+    +-- Left nav (ul > li > Link per item)
+    |   +-- Platforms (Link2 icon)
+    |   +-- AI Models (Brain icon)
+    |   +-- Defaults (SlidersHorizontal icon)
+    +-- Right content area (children)
+```
+
+**Sub-page: Platforms (`/settings/platforms`):**
+
+```
+SettingsPlatformsPage (view: /web/src/views/settings-platforms/ui/settings-platforms-page.tsx)
++-- Section "Connected Platforms"
+|   +-- ConnectedPlatformCard x N
+|       +-- PlatformIcon (colored bg + icon)
+|       +-- Account name, connected date, permissions
+|       +-- Button "Disconnect" (destructive outline)
++-- Separator
++-- Section "Available Platforms"
+    +-- AvailablePlatformCard x N
+        +-- PlatformIcon
+        +-- Platform name, description
+        +-- Button "Connect" or Badge "Coming Soon"
+```
+
+**Sub-page: AI Models (`/settings/models`):**
+
+```
+SettingsModelsPage (view: /web/src/views/settings-models/ui/settings-models-page.tsx)
++-- Section header "AI Models"
++-- ModelSelectorRow x4 (Writing, Transcription, Voice, Image)
+    +-- Card with icon + label + Select dropdown + CostBadge
+```
+
+**Sub-page: Defaults (`/settings/defaults`):**
+
+```
+SettingsDefaultsPage (view: /web/src/views/settings-defaults/ui/settings-defaults-page.tsx)
++-- Section header "Defaults"
++-- Card: Default Brand (Select)
++-- Card: Default Style Profile (Select)
++-- Card: Default Approval Mode (RadioOption x3)
++-- Card: Default Output Formats (CheckboxOption x6)
++-- Card: Timezone (Select)
++-- Card: Notification Preferences (ToggleSwitch x3)
+```
+
+### Responsive Behavior
+
+| Breakpoint | Settings Shell |
+|------------|----------------|
+| **md+** | Two-column: 192px left nav + flex-1 content |
+| **<md** | Single column: horizontal scrollable tabs above content |
+
+Sub-page content is always single-column within the content area. Cards stack vertically. Model selector rows adapt from horizontal (sm+) to vertical (<sm).
+
+### Key States
+
+| State | Visual |
+|-------|--------|
+| **All platforms connected** | Only Connected section visible |
+| **No platforms** | Only Available section visible |
+| **Saving defaults** | Optimistic update on each change, no save button. Toast notification. |
+| **OAuth in progress** | Connect button shows loading state. Platform moves to Connected section on success. |
+
+---
+
+## Appendix: Component Inventory
+
+This is the complete list of existing components referenced in this document, organized by FSD layer.
+
+### Shared UI (`/web/src/shared/ui/`)
+
+| Component | File | Usage |
+|-----------|------|-------|
+| `Button` | `button.tsx` | Primary actions, secondary actions, ghost actions |
+| `Card` | `card.tsx` | Content containers (CardHeader, CardTitle, CardAction, CardContent, CardFooter) |
+| `Badge` | `badge.tsx` | Status labels, platform badges, category tags |
+| `Dialog` | `dialog.tsx` | Confirmation dialogs, modal forms |
+| `Tabs` | `tabs.tsx` | Status filters, input type selectors |
+| `Select` | `select.tsx` | Dropdowns for filters, model selection, settings |
+| `Input` | `input.tsx` | Text inputs, search bars, URL fields |
+| `Textarea` | `textarea.tsx` | Multi-line text inputs, content editing |
+| `Progress` | `progress.tsx` | Score bars, step progress |
+| `Separator` | `separator.tsx` | Section dividers |
+| `Skeleton` | `skeleton.tsx` | Loading state placeholders |
+| `Tooltip` | `tooltip.tsx` | Icon-only button labels |
+| `Popover` | `popover.tsx` | Step selector menu |
+| `DropdownMenu` | `dropdown-menu.tsx` | Overflow action menus |
+| `ScrollArea` | `scroll-area.tsx` | Mobile settings tabs |
+| `Avatar` | `avatar.tsx` | User menu |
+| `Checkbox` | `checkbox.tsx` | Bulk select in review queue |
+| `Command` | `command.tsx` | Global search palette |
+| `Sheet` | `sheet.tsx` | Mobile slide-out panels |
+| `PageHeader` | `page-header.tsx` | Page title + Korean subtitle + action button |
+| `EmptyState` | `empty-state.tsx` | Icon + title + description + CTA for empty pages |
+| `SectionHeader` | `section-header.tsx` | Section title + "View all" link |
+| `StatusIndicator` | `status-indicator.tsx` | Icon + label for entity statuses |
+
+### Entities (`/web/src/entities/`)
+
+| Component | File | Usage |
+|-----------|------|-------|
+| `PipelineCard` | `pipeline/ui/pipeline-card.tsx` | Pipeline list grid items |
+| `PipelineCardSkeleton` | `pipeline/ui/pipeline-card-skeleton.tsx` | Loading state |
+| `PipelineStatusBadge` | `pipeline/ui/pipeline-status-badge.tsx` | Pipeline status labels |
+| `RunStatusBadge` | `pipeline/ui/run-status-badge.tsx` | Run status labels |
+| `StyleCard` | `style/ui/style-card.tsx` | Style library grid items |
+| `StyleCardSkeleton` | `style/ui/style-card-skeleton.tsx` | Loading state |
+| `StyleAttributeBadge` | `style/ui/style-attribute-badge.tsx` | Attribute label-value pills |
+| `BrandCard` | `brand/ui/brand-card.tsx` | Brand library grid items |
+| `BrandCardSkeleton` | `brand/ui/brand-card-skeleton.tsx` | Loading state |
+| `BrandCompactCard` | `brand/ui/brand-compact-card.tsx` | Compact brand card for inline selection |
+| `ReviewCard` | `review/ui/review-card.tsx` | Review queue items |
+| `FormatIcon` | `review/ui/format-icon.tsx` | Content format icons |
+| `LifecycleBadge` | `trend/ui/lifecycle-badge.tsx` | Trend lifecycle stage indicator |
+| `TrendTopicPill` | `trend/ui/trend-topic-pill.tsx` | Trend topic display pill |
+
+### Widgets (`/web/src/widgets/`)
+
+| Component | File | Usage |
+|-----------|------|-------|
+| `AppLayout` | `layout/ui/app-layout.tsx` | Root layout shell (TopBar + Sidebar + main + MobileBottomBar) |
+| `TopBar` | `layout/ui/top-bar.tsx` | Fixed header with search, notifications, user menu |
+| `Sidebar` | `layout/ui/sidebar.tsx` | Desktop left navigation |
+| `SidebarNavItem` | `layout/ui/sidebar-nav-item.tsx` | Individual nav item |
+| `MobileBottomBar` | `layout/ui/mobile-bottom-bar.tsx` | Mobile bottom tab bar |
+| `GreetingSection` | `dashboard/ui/greeting-section.tsx` | Dashboard greeting + stat cards |
+| `PendingReviews` | `dashboard/ui/pending-reviews.tsx` | Dashboard pending review list |
+| `QuickStart` | `dashboard/ui/quick-start.tsx` | Dashboard action shortcuts |
+| `RecentRuns` | `dashboard/ui/recent-runs.tsx` | Dashboard recent pipeline runs |
+| `TrendingTopics` | `dashboard/ui/trending-topics.tsx` | Dashboard trending topic pills |
+| `EmptyDashboard` | `dashboard/ui/empty-dashboard.tsx` | First-use dashboard state |
+| `DashboardSkeleton` | `dashboard/ui/dashboard-skeleton.tsx` | Dashboard loading state |
+| `PipelineListSkeleton` | `pipeline-list/ui/pipeline-list-skeleton.tsx` | Pipeline list loading |
+| `StyleLibrarySkeleton` | `style-library/ui/style-library-skeleton.tsx` | Style library loading |
+| `BrandLibrarySkeleton` | `brand-library/ui/brand-library-skeleton.tsx` | Brand library loading |
+| `BuilderProgress` | `pipeline-builder/ui/builder-progress.tsx` | Pipeline builder step indicator |
+| `StepBasics` | `pipeline-builder/ui/step-basics.tsx` | Builder step 1: template + source |
+| `StepSteps` | `pipeline-builder/ui/step-steps.tsx` | Builder step 2: step ordering |
+| `StepSettings` | `pipeline-builder/ui/step-settings.tsx` | Builder step 3: brand/style/trigger |
+| `StepReview` | `pipeline-builder/ui/step-review.tsx` | Builder step 4: summary + actions |
+| `ContentCard` | `content-library/ui/content-card.tsx` | Content library grid items |
+| `SettingsLayout` | `settings/ui/settings-layout.tsx` | Settings shell with sub-nav |
+
+### Features (`/web/src/features/`)
+
+| Component | File | Usage |
+|-----------|------|-------|
+| `NotificationBell` | `notifications/ui/notification-bell.tsx` | TopBar notification icon with count |
+| `SearchTrigger` | `search/ui/search-command.tsx` | TopBar search bar / command palette trigger |
+| `ThemeToggle` | `theme-toggle/ui/theme-toggle.tsx` | TopBar dark/light mode toggle |
+
+---
+
+*This document is the single source of truth for Kova's UX design. All page implementations should reference the layouts, interaction patterns, and state definitions described here. When in doubt, refer back to the design principles in Part 1.*

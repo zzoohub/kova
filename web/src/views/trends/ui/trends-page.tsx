@@ -187,6 +187,9 @@ export function TrendsPage() {
       <Card className="mt-8">
         <CardHeader>
           <CardTitle className="text-sm">Lifecycle Stages</CardTitle>
+          <p className="text-xs text-muted-foreground" lang="ko">
+            라이프사이클 단계
+          </p>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -200,6 +203,9 @@ export function TrendsPage() {
                 <span className="text-xs text-muted-foreground">
                   Early signal, 1-2 platforms
                 </span>
+                <span className="text-xs text-muted-foreground" lang="ko">
+                  초기 신호, 1-2개 플랫폼
+                </span>
               </div>
             </div>
             <div className="flex items-start gap-2">
@@ -211,6 +217,9 @@ export function TrendsPage() {
                 <span className="text-sm font-medium">Rising</span>
                 <span className="text-xs text-muted-foreground">
                   Growing on 3+ platforms
+                </span>
+                <span className="text-xs text-muted-foreground" lang="ko">
+                  3개 이상 플랫폼에서 성장 중
                 </span>
               </div>
             </div>
@@ -224,6 +233,9 @@ export function TrendsPage() {
                 <span className="text-xs text-muted-foreground">
                   High engagement, growth flattening
                 </span>
+                <span className="text-xs text-muted-foreground" lang="ko">
+                  높은 참여도, 성장 둔화
+                </span>
               </div>
             </div>
             <div className="flex items-start gap-2">
@@ -235,6 +247,9 @@ export function TrendsPage() {
                 <span className="text-sm font-medium">Declining</span>
                 <span className="text-xs text-muted-foreground">
                   Engagement decreasing
+                </span>
+                <span className="text-xs text-muted-foreground" lang="ko">
+                  참여도 감소
                 </span>
               </div>
             </div>

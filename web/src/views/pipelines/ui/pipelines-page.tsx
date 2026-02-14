@@ -38,8 +38,11 @@ export function PipelinesPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortBy, setSortBy] = useState("recent");
 
+  const pipelines = mockPipelines;
+  const hasNoPipelines = pipelines.length === 0;
+
   const filteredPipelines = useMemo(() => {
-    let result = mockPipelines;
+    let result = pipelines;
 
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
@@ -71,7 +74,39 @@ export function PipelinesPage() {
     }
 
     return sorted;
-  }, [searchQuery, statusFilter, sortBy]);
+  }, [pipelines, searchQuery, statusFilter, sortBy]);
+
+  // No pipelines at all — zero-data empty state
+  if (hasNoPipelines) {
+    return (
+      <div className="flex flex-col gap-6">
+        <PageHeader
+          title="Pipelines"
+          titleKo="파이프라인"
+          action={
+            <Button asChild>
+              <Link href={ROUTES.PIPELINE_NEW}>
+                <Plus />
+                New Pipeline
+              </Link>
+            </Button>
+          }
+        />
+        <EmptyState
+          icon={GitBranch}
+          title="No pipelines yet"
+          titleKo="아직 파이프라인이 없습니다"
+          description="Pipelines automate your content creation workflow. Create your first pipeline to start generating content automatically."
+          descriptionKo="파이프라인은 콘텐츠 생성 워크플로우를 자동화합니다. 첫 번째 파이프라인을 만들어 콘텐츠를 자동으로 생성하세요."
+          action={
+            <Button asChild>
+              <Link href={ROUTES.PIPELINE_NEW}>Create Your First Pipeline</Link>
+            </Button>
+          }
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -138,21 +173,21 @@ export function PipelinesPage() {
           ))}
         </div>
       ) : (
-        <EmptyState
-          icon={GitBranch}
-          title="No pipelines found"
-          titleKo="파이프라인을 찾을 수 없습니다"
-          description="Create your first pipeline to start generating content automatically."
-          descriptionKo="콘텐츠를 자동으로 생성하려면 첫 번째 파이프라인을 만드세요."
-          action={
-            <Button asChild>
-              <Link href={ROUTES.PIPELINE_NEW}>
-                <Plus />
-                New Pipeline
-              </Link>
-            </Button>
-          }
-        />
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <Search
+            className="mb-4 size-12 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <p className="text-base font-semibold text-foreground">
+            No pipelines match your filters
+          </p>
+          <p className="text-sm text-muted-foreground" lang="ko">
+            필터와 일치하는 파이프라인이 없습니다
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Try adjusting your search or filters.
+          </p>
+        </div>
       )}
     </div>
   );

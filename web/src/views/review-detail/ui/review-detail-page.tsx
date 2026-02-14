@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import Link from "next/link";
+import { ArrowLeft, ChevronDown, ChevronUp } from "lucide-react";
+import { ROUTES } from "@/shared/config/routes";
 import {
   Card,
   CardHeader,
@@ -43,6 +45,15 @@ export function ReviewDetailPage(props: ReviewDetailContentProps) {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Back link */}
+      <Link
+        href={ROUTES.REVIEW}
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring w-fit"
+      >
+        <ArrowLeft className="size-4" aria-hidden="true" />
+        Review Queue
+      </Link>
+
       {/* Header */}
       <div className="min-w-0">
         <div className="flex items-center gap-2">
@@ -61,6 +72,9 @@ export function ReviewDetailPage(props: ReviewDetailContentProps) {
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Context</CardTitle>
+              <p className="text-sm text-muted-foreground" lang="ko">
+                컨텍스트
+              </p>
             </CardHeader>
             <CardContent className="flex flex-col gap-6">
               {/* Source */}
@@ -152,9 +166,14 @@ export function ReviewDetailPage(props: ReviewDetailContentProps) {
         {/* Output Panel */}
         <div className="flex-1 lg:w-[65%]">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-foreground">
-              Generated Thread
-            </h2>
+            <div>
+              <h2 className="text-base font-semibold text-foreground">
+                Generated Thread
+              </h2>
+              <p className="text-sm text-muted-foreground" lang="ko">
+                생성된 스레드
+              </p>
+            </div>
             <span className="text-sm text-muted-foreground">
               {detail.generatedContent.thread.length} posts
             </span>
@@ -200,10 +219,17 @@ export function ReviewDetailPage(props: ReviewDetailContentProps) {
       <div className="sticky bottom-0 z-10 -mx-6 border-t bg-background px-6 py-4">
         <div className="flex items-center justify-between gap-3">
           <Button variant="outline" className="border-destructive text-destructive hover:bg-destructive/10">
-            Reject with Feedback
+            <span>Reject with Feedback</span>
+            <span className="sr-only" lang="ko">피드백과 함께 거절</span>
           </Button>
-          <Button variant="ghost">Skip</Button>
-          <Button variant="default">Approve & Continue</Button>
+          <Button variant="ghost">
+            <span>Skip</span>
+            <span className="sr-only" lang="ko">건너뛰기</span>
+          </Button>
+          <Button variant="default">
+            <span>Approve & Continue</span>
+            <span className="sr-only" lang="ko">승인 후 계속</span>
+          </Button>
         </div>
       </div>
     </div>
