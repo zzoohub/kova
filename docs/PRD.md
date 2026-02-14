@@ -697,4 +697,4 @@ These decisions require further research, user testing, or stakeholder input:
 
 ---
 
-*This document defines what Kova does and why. For implementation details — architecture, data models, APIs, project structure, and engineering roadmap — see the Technical PRD.*
+*This document defines what Kova does and why. For implementation details — architecture, data models, APIs, project structure, and engineering roadmap — see the Technical PRD. For MVP scope and timeline, see the MVP PRD.*

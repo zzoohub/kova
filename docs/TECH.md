@@ -18,6 +18,13 @@
 | Added style preview validation to data flow | §15.3 | Extraction now includes mandatory preview generation before save. |
 | Updated Style domain description | §2.1 | Removed composite references from bounded context. |
 | Updated Protocol Catalog | §2.2 | No protocol changes needed — `StyleProfileRepository` and `LLMProvider` already support single-reference workflow. |
+| Added Scheduled Pipeline Execution design | §4.10 | Product PRD defines scheduled pipelines as a major feature. Previous version had no technical detail on schedule storage, trigger flow, or approval mode interaction. |
+| Added Style Extraction Architecture | §9.4 | Style extraction is the core differentiator but had no technical design. Defines prompt strategy, validation, and application approach. |
+| Added Structured Content Asset Model | §15.4 | Content assets (threads, carousels, scripts) need structured schemas, not just text blobs. Defines per-format models. |
+| Added Content Search API | §8.7 | Product PRD implies users build content libraries. Added search/filter endpoints for content assets. |
+| Changed real-time from polling to SSE | §4.9, §16.1 | SSE is trivial in FastAPI and provides better UX for pipeline progress. No reason to defer. |
+| Added tiered rate limiting | §7.4 | Previous design had flat 100 req/min per user. Pipeline execution generates machine traffic that needs separate limits. Added org-level budget. |
+| Added health check and file upload endpoints | §8.10 | Missing from previous API surface. |
 
 ---
 
@@ -173,6 +180,7 @@ User triggers pipeline → PipelineRun created (pending)
 | partially_completed | Some fan-out branches succeeded, others failed |
 | failed | Critical step failed after retries |
 | cancelled | User manually stopped |
+| expired | Scheduled pipeline content not reviewed within expiry window |
 
 **Pause/Resume:** Between steps, the executor checks run status. If `paused`, it does not enqueue the next step. When user resumes, status set to `running` and next pending step is enqueued. A currently executing step finishes normally — pause takes effect after it completes.
 
@@ -224,7 +232,65 @@ Cloud Tasks guarantees at-least-once delivery — steps can execute more than on
 
 ### 4.9 Progress Reporting
 
-Steps write progress to DB via callback. Frontend polls `GET /runs/:id` every 3–5 seconds. Stops polling when status is `completed`, `failed`, or `waiting_for_approval`. Upgrade to SSE if polling load becomes a concern at 100+ concurrent users.
+Steps write progress to DB via callback. Frontend receives progress via SSE (Server-Sent Events) on `GET /runs/:id/stream`. SSE connection sends JSON events for step progress, status changes, and completion. Connection auto-closes when status is `completed`, `failed`, or `waiting_for_approval`. Notification badge count also delivered via SSE on `GET /notifications/stream`.
+
+**Implementation:** FastAPI `StreamingResponse` with async generator. Each event is a JSON-encoded SSE message. Frontend uses native `EventSource` API. No WebSocket complexity, no external infrastructure, works through proxies and load balancers.
+
+### 4.10 Scheduled Pipeline Execution
+
+Scheduled pipelines auto-trigger on a user-defined cron schedule without manual intervention. This is a core product feature (Product PRD §5.5, §6.1).
+
+#### Schedule Storage
+
+Schedule configuration is stored in the Pipeline's JSONB config:
+
+```
+Pipeline.config.schedule:
+  enabled: boolean
+  cron: string              # e.g., "0 10 * * 1-5" (weekdays at 10am)
+  timezone: string          # e.g., "America/New_York"
+  niche: string             # Topic niche for trend-based idea generation
+  approval_mode: enum       # "full_autopilot" | "review_before_publish" | "per_platform"
+  auto_deploy_platforms: [string]  # Platforms that auto-deploy (for per_platform mode)
+  review_platforms: [string]       # Platforms that require approval (for per_platform mode)
+```
+
+#### Trigger Flow
+
+```
+Cloud Scheduler (per-pipeline cron) → POST /internal/pipelines/:id/scheduled-run
+  → Validate: pipeline exists, schedule enabled, brand + style configured
+  → Create PipelineRun with source = "scheduled", topic_source = "trends"
+  → IdeaGeneratorStep pulls topic from pre-collected trend data (§14)
+  → Pipeline executes normally through all steps
+  → At deploy step, check approval_mode:
+      full_autopilot → deploy immediately
+      review_before_publish → pause at human gate, notify user
+      per_platform → deploy auto_deploy_platforms, pause for review_platforms
+```
+
+#### Cloud Scheduler Management
+
+When a user enables or updates a schedule, the backend creates/updates a Cloud Scheduler job via GCP API. When disabled, the job is paused (not deleted — preserves config). One Cloud Scheduler job per scheduled pipeline.
+
+#### Approval Mode Interaction
+
+- **full_autopilot:** No human gates injected. Pipeline runs end-to-end and deploys. User gets "Published N pieces" notification after.
+- **review_before_publish:** Human gate injected before deploy step. Content generates on schedule, queues for review. If user doesn't approve within configurable window (default: 24h), content expires with notification.
+- **per_platform:** Deploy step fans out per platform. Auto-deploy platforms publish immediately. Review platforms pause at human gate. Mixed notification: "Published to X, LinkedIn. YouTube awaiting review."
+
+#### Stale Content Handling
+
+If approval_mode requires review and user doesn't act within the expiry window, the run is marked `expired` (new state, distinct from `cancelled`). Scheduled pipeline continues on next cron trigger with a fresh topic. Expired content remains accessible for manual review/publishing.
+
+#### API
+
+| Method | Path | Purpose |
+|---|---|---|
+| PUT | `/pipelines/:id/schedule` | Enable/update schedule config |
+| DELETE | `/pipelines/:id/schedule` | Disable schedule |
+| GET | `/pipelines/:id/schedule` | Get current schedule config |
+| POST | `/internal/pipelines/:id/scheduled-run` | Internal: Cloud Scheduler trigger (authenticated via GCP service account) |
 
 ---
 
@@ -322,10 +388,15 @@ Every API request extracts `user_id` from JWT → looks up `org_id` via OrgMembe
 
 ### 7.4 API Security
 
-- Rate limiting: 100 req/min per user (Cloud Run + middleware).
+- Rate limiting (tiered):
+  - **User-interactive requests:** 100 req/min per user (API endpoints hit by frontend).
+  - **Pipeline execution requests:** 500 req/min per org (Cloud Tasks step execution — machine traffic, higher volume).
+  - **Org-level daily budget:** Configurable max pipeline runs per day per org (prevents runaway scheduled pipelines). Default: 50 runs/day.
+  - Implementation: middleware checks request source (JWT user vs. Cloud Tasks service account) and applies appropriate tier.
 - Input validation: Pydantic schemas on all endpoints.
 - File upload limits: 500MB video, 100MB audio, 20MB image.
 - Temp files auto-deleted after 24h.
+- CORS: Allow-origin configured for frontend domain (Cloudflare Workers/Pages URL). Credentials mode enabled for JWT cookie transport.
 
 ---
 
@@ -386,7 +457,7 @@ Every API request extracts `user_id` from JWT → looks up `org_id` via OrgMembe
 | POST | `/pipelines/:id/run` | Trigger pipeline run |
 | GET | `/pipelines/:id/runs` | List runs for pipeline |
 | GET | `/runs/:id` | Get run status + step results |
-| GET | `/runs/:id/poll` | Poll for progress (frontend polling) |
+| GET | `/runs/:id/stream` | SSE stream for real-time step progress and status changes |
 | POST | `/runs/:id/pause` | Pause running pipeline |
 | POST | `/runs/:id/resume` | Resume paused pipeline |
 | POST | `/runs/:id/cancel` | Cancel pipeline |
@@ -411,6 +482,7 @@ Every API request extracts `user_id` from JWT → looks up `org_id` via OrgMembe
 | Method | Path | Purpose |
 |---|---|---|
 | GET | `/runs/:id/outputs` | List all content assets for a run |
+| GET | `/content` | Search/filter content assets (query params: `q`, `format`, `brand_id`, `created_after`, `created_before`, `pipeline_id`) |
 | GET | `/content/:id` | Get specific content asset |
 | GET | `/content/:id/download` | Download content as file |
 | GET | `/deploys` | Publishing history (filterable by platform, date, brand) |
@@ -430,7 +502,18 @@ Every API request extracts `user_id` from JWT → looks up `org_id` via OrgMembe
 | GET | `/notifications` | List notifications (unread first) |
 | POST | `/notifications/:id/read` | Mark as read |
 | POST | `/notifications/read-all` | Mark all as read |
-| GET | `/notifications/unread-count` | Badge count for UI |
+| GET | `/notifications/stream` | SSE stream for real-time notification badge updates |
+
+### 8.10 Uploads & System
+
+| Method | Path | Purpose |
+|---|---|---|
+| POST | `/uploads/video` | Upload video file (max 500MB) → returns upload_id |
+| POST | `/uploads/audio` | Upload audio file (max 100MB) → returns upload_id |
+| POST | `/uploads/image` | Upload image file (max 20MB) → returns upload_id |
+| POST | `/uploads/document` | Upload document (.docx, .pdf, .txt) → returns upload_id |
+| GET | `/health` | Health check (Cloud Run liveness/readiness probe) |
+| GET | `/health/ready` | Readiness check (DB connection, critical services) |
 
 All responses follow RFC 9457 ProblemDetails on error. Versioning via URL prefix (`/v1/`) when breaking changes occur.
 
@@ -485,13 +568,86 @@ EMBEDDING_PROVIDER=openai
 LLM_PROVIDERS_ENABLED=claude,openai,deepseek
 ```
 
+### 9.4 Style Extraction Architecture
+
+Style extraction is Kova's core differentiator and the hardest AI problem in the product. This section defines how extraction, validation, and application work.
+
+#### Extraction Strategy
+
+Style extraction uses a **structured extraction prompt** that asks the LLM to analyze reference content and output each of the 10 style attributes (§7.2 in Product PRD) as distinct JSON fields. The prompt is explicit about what each attribute means and provides examples of good extraction output.
+
+```
+Extraction prompt structure:
+  System: You are a content structure analyst. Extract ONLY composition
+          and editing patterns — not voice, tone, or topic.
+  User:   [reference content text]
+  Format: Return JSON with fields: hook_pattern, content_structure,
+          section_pacing, transition_technique, engagement_placement,
+          closing_cta_pattern, formatting_layout, information_density,
+          evidence_example_pattern, platform_conventions.
+          Each field is a string describing the observed pattern.
+```
+
+**Validation after extraction:** The system runs a second LLM call that generates a short sample paragraph (3-5 sentences) on a random unrelated topic using only the extracted attributes. This preview is shown to the user before saving. If the preview doesn't reflect the reference structure, the user adjusts attributes and re-previews.
+
+#### Application Strategy: Few-Shot + Attributes
+
+Style application uses a **dual approach** for maximum reliability:
+
+1. **Few-shot reference inclusion:** The original reference content (or a trimmed version, max ~2000 tokens) is included in the generation prompt as a structural example. This gives the LLM a concrete pattern to follow.
+2. **Extracted attributes as explicit constraints:** The JSONB style attributes are injected as structured instructions alongside the reference. This handles cases where the reference is ambiguous and ensures the user's manual edits are respected.
+
+```
+Generation prompt structure:
+  System: You are a content writer. Follow the structural pattern below.
+          Voice and tone come from the Brand settings (provided separately).
+  
+  [Brand voice/tone/vocabulary settings]
+  
+  Structural reference (follow this pattern, NOT the topic or voice):
+  [trimmed reference content — max ~2000 tokens]
+  
+  Structural constraints (these override the reference if they conflict):
+  - Hook: {hook_pattern}
+  - Structure: {content_structure}
+  - Pacing: {section_pacing}
+  - Transitions: {transition_technique}
+  - Engagement: {engagement_placement}
+  - Closing: {closing_cta_pattern}
+  - Formatting: {formatting_layout}
+  - Density: {information_density}
+  - Evidence: {evidence_example_pattern}
+  - Platform: {platform_conventions}
+  
+  User: Write about [topic] in [format].
+```
+
+The few-shot reference provides the LLM with a concrete example to pattern-match against, while the extracted attributes serve as explicit constraints and accommodate manual edits. If the user edits an attribute (e.g., changes hook pattern), the attribute override takes precedence.
+
+#### Storage
+
+StyleProfile stores:
+- `attributes` (JSONB): The 10 extracted attribute fields, manually editable.
+- `reference_text` (text): The original reference content (trimmed to ~2000 tokens). Used for few-shot inclusion in generation prompts.
+- `reference_source` (JSONB): Metadata about where the reference came from (URL, file name, platform type).
+- `preview_topic` (text): The random topic used for the last preview generation.
+- `preview_output` (text): The last generated preview sample.
+
+#### Quality Iteration
+
+Style extraction quality improves iteratively:
+1. Track which style profiles get edited heavily after extraction (signals poor extraction).
+2. Track first-pass approval rates for content generated with style profiles vs. without.
+3. A/B test extraction prompts — store prompt version in StyleProfile for correlation.
+4. Log user edits to attributes to understand which attributes extract poorly.
+
 ---
 
 ## 10. Notifications
 
 ### 10.1 In-App Only
 
-Notifications stored in DB, delivered via frontend polling (same polling mechanism as pipeline progress).
+Notifications stored in DB, delivered via SSE (same real-time mechanism as pipeline progress).
 
 ### 10.2 Notification Types
 
@@ -515,7 +671,7 @@ Notification:
 
 ### 10.4 Delivery
 
-Frontend polls `GET /notifications/unread-count` every 30 seconds for badge count. Full notification list loaded on click. Notifications auto-created by services (PipelineService, DeployService) when relevant events occur — no separate event bus needed.
+Frontend connects to `GET /notifications/stream` via SSE for real-time badge count updates. Full notification list loaded on click via `GET /notifications`. Notifications auto-created by services (PipelineService, DeployService) when relevant events occur — no separate event bus needed. SSE connection sends a JSON event whenever a new notification is created for the user.
 
 ### 10.5 Future
 
@@ -680,8 +836,8 @@ Configuration is env-var driven. Switching phases = change config, no code chang
 | Pipeline versions | DB (JSONB config) | Version history per pipeline |
 | Pipeline templates | DB (JSONB config) | Pre-built + user-saved, `is_template` flag |
 | Pipeline runs | DB | State, context, results |
-| Style profiles | DB (JSONB attributes) | Extracted patterns from single reference, manually editable |
-| Content assets | DB (text) + R2 (files) | Generated content, variation_index for multi-choice |
+| Style profiles | DB (JSONB attributes + reference text) | Extracted patterns, reference content for few-shot, manually editable. See §9.4. |
+| Content assets | DB (JSONB structured content + plain_text + R2 files) | Format-specific structured content, searchable via tsvector. See §15.4. |
 | Deploy records | DB | What published where/when, scheduled_at |
 | Notifications | DB | In-app notifications with read status |
 | Trend signals | DB | Raw data, 30-day retention |
@@ -696,6 +852,87 @@ JSONB used for: pipeline configs, brand settings, style attributes, step results
 **Migration strategy:** Lazy backfill — old rows upgraded on read, written back with new version. Bulk backfill script available for major version changes.
 
 **Validation:** Domain dataclasses validate JSONB shape on deserialization. Invalid data raises domain error, never silently ignored.
+
+### 15.4 Structured Content Asset Model
+
+Content assets need format-specific structure, not just raw text. A 12-post thread is an ordered array of posts with per-post constraints. A carousel is an ordered array of slides. A video script has chapters with visual cues. The `ContentAsset` model supports this via a structured `content` JSONB field alongside a `plain_text` field for display/search.
+
+#### ContentAsset Schema
+
+```
+ContentAsset:
+  id, org_id, run_id, step_index, variation_index,
+  format: enum (thread, post, article, video_script, short_video_script,
+                newsletter, carousel, podcast_script, community_post),
+  plain_text: text,          # Flattened text for display and search
+  content: JSONB,            # Format-specific structured content
+  metadata: JSONB,           # Platform metadata (hashtags, SEO, thumbnail desc)
+  created_by, created_at
+```
+
+#### Format-Specific Content Structures
+
+**Thread (X/Twitter):**
+```json
+{
+  "posts": [
+    { "index": 1, "text": "...", "char_count": 247, "media_prompt": null },
+    { "index": 2, "text": "...", "char_count": 195, "media_prompt": "chart showing..." }
+  ],
+  "total_posts": 12
+}
+```
+
+**Carousel (Instagram/LinkedIn):**
+```json
+{
+  "slides": [
+    { "index": 1, "headline": "...", "body": "...", "visual_note": "..." },
+    { "index": 2, "headline": "...", "body": "...", "visual_note": "..." }
+  ],
+  "total_slides": 8
+}
+```
+
+**Video Script (YouTube long-form):**
+```json
+{
+  "title": "...",
+  "thumbnail_description": "...",
+  "chapters": [
+    { "timestamp": "0:00", "title": "Hook", "script": "...", "visual_cues": ["..."] },
+    { "timestamp": "2:15", "title": "Problem", "script": "...", "visual_cues": ["..."] }
+  ],
+  "outro_cta": "...",
+  "total_duration_estimate": "12:30"
+}
+```
+
+**Newsletter:**
+```json
+{
+  "subject_line": "...",
+  "preview_text": "...",
+  "sections": [
+    { "heading": "...", "body": "...", "links": [{"text": "...", "url": "..."}] }
+  ],
+  "cta": { "text": "...", "url": "..." }
+}
+```
+
+**Article / Post / Podcast / Community:** Similar structured JSON with format-appropriate fields.
+
+#### Search and Filtering
+
+`GET /content` supports:
+- `q` (text): Full-text search against `plain_text` field (PostgreSQL `tsvector` index).
+- `format` (enum): Filter by content format.
+- `brand_id` (uuid): Filter by brand used in the pipeline run.
+- `pipeline_id` (uuid): Filter by source pipeline.
+- `created_after` / `created_before` (datetime): Date range filter.
+- Pagination via `cursor` parameter.
+
+The `plain_text` field is auto-generated from structured `content` at save time — flattened for search, never used for rendering.
 
 ### 15.3 Data Flows
 
@@ -715,12 +952,14 @@ User selects Brand + Style + Pipeline → creates PipelineRun
 ```
 User provides single reference (URL, text, upload)
   → ReferenceFetcher resolves to text
-  → LLM extracts style attributes (composition patterns only, not voice)
-  → System generates preview sample using extracted attributes
+  → LLM extracts style attributes via structured extraction prompt (§9.4)
+  → Reference text trimmed to ~2000 tokens, stored alongside attributes
+  → System generates preview sample using few-shot + attributes (§9.4)
   → User validates preview (adjust attributes and re-preview if needed)
-  → StyleProfile saved (JSONB, manually editable post-save)
-  → Applied to future runs via prompt injection
+  → StyleProfile saved: attributes (JSONB) + reference_text + metadata
+  → Applied to future runs via dual prompt injection: few-shot reference + attribute constraints
   → Users can edit individual attributes and re-preview at any time
+  → Edits override the few-shot reference for modified attributes
 ```
 
 **Trend:**
@@ -743,7 +982,7 @@ Cloud Scheduler → Collectors → Raw signals in DB
 | Database | Neon DB (Serverless PostgreSQL) | Serverless scaling, JSONB, connection pooling |
 | Job Queue | Cloud Tasks | Native Cloud Run integration, retries, timeouts, fan-out |
 | File Storage | Cloudflare R2 | S3-compatible, zero egress fees |
-| Real-time | Frontend polling (SSE upgrade later) | Simple, works everywhere, no connection management |
+| Real-time | SSE (Server-Sent Events) | Native FastAPI StreamingResponse, no external infrastructure, works through proxies |
 | Secrets | GCP Secret Manager | Encryption keys, API keys |
 | Package Mgmt | uv | Fast, lockfile committed (uv.lock) |
 
@@ -826,12 +1065,14 @@ Cloud Scheduler → Collectors → Raw signals in DB
 | Cloud Run cold start latency | Low | Minimum instances; optimized container |
 | Fan-out complexity at scale | Medium | Start sequential; add parallel when needed |
 | JSONB schema drift | Medium | `_schema_version` field + lazy backfill |
-| Polling load at scale | Low | Upgrade to SSE, then Redis pub/sub if needed |
+| Polling load at scale | Low | SSE from day one; upgrade to Redis pub/sub if SSE connection count becomes a concern |
 | Cost management at scale | High | Per-step token logging; daily budget alerts; self-host at volume |
 | AI output quality inconsistency | High | Human gates; multi-choice variations; structured validation; retry with stricter prompt |
 | Content saturation | Medium | Style differentiation over volume; quality metrics |
 | Multi-choice variation cost | Low | Multiplies LLM calls by N; user-configurable, default 1 |
 | Platform scheduling gaps | Low | Not all platforms support native scheduling; draft/export fallback |
+| Scheduled pipeline runaway | Medium | Org-level daily run budget; expiry window for unapproved content; monitoring alerts on scheduled run volume |
+| Rate limit contention (user vs. pipeline) | Medium | Tiered rate limits: separate budgets for interactive and machine traffic; org-level daily caps |
 | Style extraction quality | High | Preview validation before save; manual attribute editing; few-shot reference inclusion in generation prompts; iterative prompt improvement |
 
 ---
