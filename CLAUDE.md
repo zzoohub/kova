@@ -86,19 +86,26 @@ INBOUND (FastAPI Routes, Cloud Tasks Handler, Webhooks)
 
 | Domain | Responsibility | Key Models |
 |---|---|---|
-| pipeline | Orchestration, run state, step execution | Pipeline, PipelineRun, StepConfig, PipelineContext |
+| org | Organization, membership, roles | Organization, OrgMembership |
+| brand | Brand identity, voice, platform accounts | Brand, BrandSettings, PlatformAccount |
+| pipeline | Orchestration, run state, step execution, templates | Pipeline, PipelineRun, PipelineTemplate, PipelineVersion, StepConfig, PipelineContext |
 | steps | Step execution contracts and registry | StepInput, StepOutput, StepProgress |
-| style | Composition pattern extraction, profile management | StyleProfile, StyleAttribute, ReferenceSource |
+| style | Reference analysis, profile management, preview validation | StyleProfile, StyleAttribute, ReferenceSource |
 | content | Assets, transformations, deployment | ContentAsset, DeployRecord, TransformResult |
 | trends | Trend signals, topic aggregation | TrendSignal, TrendTopic |
+| notifications | In-app notification delivery | Notification, NotificationPreference |
 
 ### Key Protocols (Ports)
 
 | Category | Protocol | Purpose |
 |---|---|---|
-| Repository | PipelineRepository | Pipeline and run persistence |
+| Repository | OrgRepository | Organization and membership persistence |
+| Repository | BrandRepository | Brand and platform account storage |
+| Repository | PipelineRepository | Pipeline, template, and run persistence |
 | Repository | StyleProfileRepository | Style profile storage |
 | Repository | TrendRepository | Trend signal and topic storage |
+| Repository | ContentRepository | Content assets and deploy records |
+| Repository | NotificationRepository | Notification persistence and queries |
 | AI Provider | LLMProvider | Text generation — scripts, ideas, analysis |
 | AI Provider | Transcriber | Audio/video → timestamped text |
 | AI Provider | VisionProvider | Image/video understanding |
@@ -111,9 +118,9 @@ INBOUND (FastAPI Routes, Cloud Tasks Handler, Webhooks)
 | AI Provider | VideoManipulator | Video ops (cut, crop, caption) |
 | Provider | StorageProvider | File storage (S3-compatible) |
 | Provider | ReferenceFetcher | Content retrieval from URLs/files |
-| Target | DeployTarget | Content publishing to platforms |
+| Provider | LLMProviderRegistry | Resolves provider by name for per-step model selection |
+| Target | DeployTarget | Content publishing to platforms (supports `scheduled_at`) |
 | Target | ContentTransformer | Format conversion (long → thread, etc.) |
-| Collector | TrendCollector | External trend data fetching |
 | Step | PipelineStep | Pipeline step execution contract |
 
 ### Pipeline Execution Model
@@ -122,7 +129,7 @@ Each step runs as a separate Cloud Run request triggered by Cloud Tasks. Steps a
 
 **Trigger modes:** One-time (user clicks Run) or Scheduled (Cloud Scheduler cron). Scheduled pipelines require saved style profile + configured niche.
 
-**Run states:** pending → running → waiting_for_approval → completed | partially_completed | failed | cancelled
+**Run states:** pending → running → waiting_for_approval → completed | partially_completed | failed | cancelled | paused | expired
 
 **Human gates:** Pipeline pauses (no active request), user reviews via API, approval enqueues next step. Scheduled runs support full autopilot, review-before-publish, or per-platform approval.
 
@@ -138,11 +145,14 @@ app/
   config.py                        # pydantic-settings
 
 domain/                            # ━━ NEVER imports from inbound/ or outbound/ ━━
+  org/                             # models.py, errors.py, ports.py, service.py
+  brand/                           # models.py, errors.py, ports.py, service.py
   pipeline/                        # models.py, errors.py, ports.py, service.py
   steps/                           # models.py, errors.py, ports.py, registry.py
   style/                           # models.py, errors.py, ports.py, service.py
   content/                         # models.py, errors.py, ports.py, service.py
   trends/                          # models.py, errors.py, ports.py, service.py
+  notifications/                   # models.py, errors.py, ports.py, service.py
 
 inbound/                           # ━━ Drives the domain ━━
   http/
@@ -150,9 +160,15 @@ inbound/                           # ━━ Drives the domain ━━
     errors.py                      # Exception handlers → RFC 9457 ProblemDetails
     dependencies.py                # DI via lifespan state + request.state
     response.py                    # ApiSuccess, Created, Ok, NoContent
+    auth/                          # router.py, request.py, response.py
+    org/                           # router.py, request.py, response.py
+    brand/                         # router.py, request.py, response.py
     pipeline/                      # router.py, request.py, response.py
     style/                         # router.py, request.py, response.py
+    content/                       # router.py, request.py, response.py
     platform/                      # router.py, request.py, response.py
+    notifications/                 # router.py, request.py, response.py
+    uploads/                       # router.py, request.py, response.py
   tasks/
     handler.py                     # Cloud Tasks step execution
     webhook.py                     # External service webhooks
@@ -178,7 +194,7 @@ outbound/                          # ━━ Implements domain Protocols ━━
 - **Models**: `@dataclass(frozen=True)`, no ORM coupling
 - **Errors**: exhaustive hierarchy per domain, never `HTTPException`
 - **Ports**: `typing.Protocol` classes in `ports.py` (structural subtyping)
-- **Services**: orchestrate repos + providers, called by inbound handlers
+- **Services**: orchestrate repos + providers, called by inbound handlers. Each domain has a Service Protocol (interface) and ServiceImpl.
 - **Shell**: FastAPI wrapped in Shell class (`Shell.build_test_app()` for testing)
 - **DI**: lifespan state + `request.state` (no framework DI container)
 - **Request schemas**: `try_into_domain()` to convert to domain types
@@ -188,6 +204,8 @@ outbound/                          # ━━ Implements domain Protocols ━━
 - **ORM models**: ONLY in `outbound/postgres/models.py`
 - **Mappers**: explicit `to_domain()` / `from_domain()`
 - **Infra errors**: caught → re-raised as domain errors
+- **Resource scoping**: all resources scoped by `org_id`, `user_id` tracked as `created_by` for audit
+- **JSONB versioning**: every JSONB column includes `_schema_version` integer, lazy backfill on read
 
 ### Async Safety
 - All I/O must be async in async routes
